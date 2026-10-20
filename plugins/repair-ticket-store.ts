@@ -58,13 +58,20 @@ const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
 const statuses = Object.keys(statusTransitions) as TicketStatus[]
 const archiveDurationMilliseconds = 24 * 60 * 60 * 1000
 const maximumEvents = 8
+const adjectives = [
+  "amber", "arc", "ash", "blue", "brisk", "cinder", "clear", "cobalt",
+  "coral", "crimson", "dawn", "drift", "ember", "frost", "gold", "granite",
+  "harbor", "indigo", "iron", "jade", "lunar", "mist", "neon", "night",
+  "onyx", "quiet", "rapid", "river", "silver", "solar", "swift", "titan",
+]
+const animals = [
+  "badger", "beacon", "falcon", "fox", "gecko", "heron", "ibis", "kestrel",
+  "lynx", "marten", "otter", "owl", "panda", "raven", "seal", "shark",
+  "sparrow", "tiger", "viper", "wolf", "wren", "yak", "zebra", "zorilla",
+]
 
 function ticketKey(id: string): string {
   return `ticket/${id.replace(/^#/, "")}`
-}
-
-function createTicketID(): string {
-  return `rt_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`
 }
 
 function isTicketStatus(value: string): value is TicketStatus {
@@ -118,6 +125,18 @@ export default Plugin.define({
       return removed
     }
 
+    const createTicketID = async (): Promise<string> => {
+      const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100 })
+      const existingIDs = new Set(page.entries.map((entry) => entry.key.slice("ticket/".length)))
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const adjective = adjectives[Math.floor(Math.random() * adjectives.length)]
+        const animal = animals[Math.floor(Math.random() * animals.length)]
+        const id = `${adjective}_${animal}`
+        if (!existingIDs.has(id)) return id
+      }
+      throw new Error("could not allocate a unique repair ticket ID")
+    }
+
     await ctx.tool.transform((editor) => {
       editor.namespace({
         name: "repair_ticket",
@@ -155,7 +174,7 @@ export default Plugin.define({
           }
           const now = new Date().toISOString()
           const ticket: Ticket = {
-            id: createTicketID(),
+            id: await createTicketID(),
             status: "open",
             source: limitText(value.source, "source", 80),
             target: limitText(value.target, "target", 400),
