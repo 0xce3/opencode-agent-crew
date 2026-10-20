@@ -1,7 +1,7 @@
 ---
 description: Coordinates repair tickets through the specialist crew
 mode: primary
-color: "#d4af37"
+color: "#ef4444"
 steps: 32
 permissions:
   - action: edit
