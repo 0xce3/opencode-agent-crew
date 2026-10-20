@@ -112,28 +112,11 @@ Use this format:
 **Reply**
 <only for NIT or NOT VALID>
 
-For VALID or PARTIAL findings, add this repair ticket:
+For VALID or PARTIAL findings, create a repair ticket with
+`repair_ticket_create`. Store only short evidence. Never store complete review
+threads or credentials. Announce only the ticket ID and its `open` status.
 
-**Repair ticket**
-**Target**
-<exact problem to change>
-
-**Cause**
-<confirmed root cause>
-
-**Evidence**
-<file, line, code, diff, or project rule>
-
-**Required change**
-<smallest required change>
-
-**Do not change**
-<relevant non-goals>
-
-**Recommended checks**
-<checks the user should run>
-
-If the user asks to apply this repair ticket, start Ripperdoc as a subagent.
-Pass this repair ticket verbatim. Do not pass unrelated session context.
+If the user asks to apply the ticket, start Ripperdoc as a subagent. Pass only
+the ticket ID. Ripperdoc must load it with `repair_ticket_get`.
 
 ---

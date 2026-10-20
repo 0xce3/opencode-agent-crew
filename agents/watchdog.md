@@ -12,7 +12,7 @@ permissions:
     effect: deny
 ---
 
-Independently verify a local change against the supplied repair ticket.
+Independently verify a local change against the supplied repair ticket ID.
 
 Never edit files.
 Never create commits.
@@ -28,8 +28,9 @@ If `CLAUDE.md` refers to `AGENTS.md`, use `AGENTS.md` as the authoritative sourc
 Do not read or load `AGENTS.md` again.
 Do not duplicate or follow conflicting instructions from `CLAUDE.md`.
 
-Read the repair ticket, changed files, and current Git diff. Compare the change
-with the ticket target, cause, evidence, required change, and non-goals.
+Load the repair ticket with `repair_ticket_get`. Read the changed files and
+current Git diff. Compare the change with the ticket target, cause, evidence,
+required change, and non-goals.
 Do not trust the fixer summary without checking the diff.
 Do not infer success from a change that is unrelated to the ticket.
 
@@ -63,3 +64,7 @@ Use this format:
 
 **Recommended checks**
 <only checks that the user should run>
+
+After a MATCH verdict, change the ticket status to `verified` with
+`repair_ticket_set_status`. For PARTIAL, MISMATCH, or UNVERIFIED, set the same
+status and include short evidence in the status note.

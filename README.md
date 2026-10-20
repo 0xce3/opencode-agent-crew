@@ -132,7 +132,21 @@ patchrunner - plan a clean local commit history
 ```
 
 Use `/explain <topic>` to start a focused explanation session. Use
-`/fix <problem>` to ask Rook for a local fix in a child session.
+`/fix <ticket-id>` to ask Rook for a local fix in a child session.
+
+### Repair tickets
+
+Nix and Vex store confirmed findings as compact local repair tickets. The
+ticket ID is enough to hand work to Alyse, Rook, or Iris:
+
+```text
+/explain rt_<id>
+/fix rt_<id>
+```
+
+The local ticket store keeps short structured fields only. It never stores full
+logs or credentials. Iris marks a matching ticket as verified. Rook then removes
+the verified ticket. Tickets that do not match stay available for follow-up.
 
 ## House rules
 
@@ -147,6 +161,7 @@ Use `/explain <topic>` to start a focused explanation session. Use
 ```text
 agents/       Agent roles and instructions
 commands/     Reusable commands such as /fix and /explain
+plugins/      Local OpenCode extensions, including the repair ticket store
 themes/       OpenCode themes
 cli.json      Terminal UI preferences and key bindings
 opencode.jsonc OpenCode server and project-independent settings

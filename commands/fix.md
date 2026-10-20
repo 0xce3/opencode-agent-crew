@@ -4,4 +4,5 @@ agent: ripperdoc
 subagent: true
 ---
 
-Apply this repair ticket locally: $ARGUMENTS
+Load repair ticket `$ARGUMENTS` with `repair_ticket_get`.
+Apply only that ticket locally.

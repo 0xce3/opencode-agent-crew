@@ -79,28 +79,11 @@ Use this format:
 **Recommended checks**
 <smallest useful local checks>
 
-### Repair ticket
+Create a repair ticket with `repair_ticket_create` after this analysis. Store
+only short evidence. Never store complete logs or credentials. Announce only the
+ticket ID and its `open` status.
 
-**Target**
-<exact problem to change>
+If the user asks to apply the ticket, start Ripperdoc as a subagent. Pass only
+the ticket ID. Ripperdoc must load it with `repair_ticket_get`.
 
-**Cause**
-<confirmed root cause>
-
-**Evidence**
-<file, line, job step, or short log excerpt>
-
-**Required change**
-<smallest required change>
-
-**Do not change**
-<relevant non-goals>
-
-**Recommended checks**
-<checks the user should run>
-
-If the user asks to apply this repair ticket, start Ripperdoc as a subagent.
-Pass this repair ticket verbatim. Do not pass unrelated session context.
-
-**Next:** Say `Apply this repair ticket.` to start Ripperdoc, or pass this
-ticket to `/fix`.
+**Next:** Run `/fix <ticket-id>` or ask Netrunner to apply the ticket.
