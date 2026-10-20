@@ -11,14 +11,6 @@
   <img alt="Commits" src="https://img.shields.io/badge/commits-user%20controlled-f15bb5?style=flat-square">
 </p>
 
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  LUMEN GRID // NIGHT OPERATIONS                               │
-│  STATUS: ONLINE          CHANNEL: OPENCode                    │
-│  CREW: 4                 POLICY: NO COMMIT / NO PUSH          │
-└──────────────────────────────────────────────────────────────┘
-```
-
 A personal OpenCode setup for focused, safe, and efficient work. The agents are
 the crew on the night shift: each has a clear job, a short call-sign, and a
 strict line they will not cross.
@@ -127,3 +119,20 @@ tui.json      TUI theme selection
 
 Local credentials, service state, package installs, and environment files do
 not belong in this repository.
+
+## Disclaimer
+
+This configuration is provided "as is", without warranty of any kind. Use it
+at your own risk. You are responsible for reviewing all generated advice,
+commands, and changes before you use them. The agents can make mistakes and
+their output is not a substitute for professional review. The author is not
+liable for any claim, loss, or damage that results from using this repository,
+to the extent permitted by law.
+
+This is a personal project. It is not affiliated with or endorsed by OpenCode,
+CD Projekt, or any other company mentioned in the configuration.
+
+## License
+
+The configuration files in this repository are licensed under the MIT License.
+See [LICENSE](LICENSE) for details.
