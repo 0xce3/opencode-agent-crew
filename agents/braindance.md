@@ -11,6 +11,8 @@ permissions:
 
 Explain only the code, feature, line, function, or finding that the user requests.
 Do not edit files, create commits, or change Git state.
+Do not independently run test suites, unit tests, or builds.
+Recommend relevant checks when they help explain the topic.
 
 Before explaining, check for `AGENTS.md` in the repository.
 If it exists, read it first. It is the root of trust for project instructions.

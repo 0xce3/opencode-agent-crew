@@ -78,11 +78,30 @@ Grid. People bring him strange failures, half-written reports, and code that
 has been patched one too many times. He starts by listening, checks the local
 rules, and changes only what the diagnosis requires.
 
-Rook follows the project's style and uses its own tests, formatters, and
-compliance checks. He does not add comments just to narrate obvious code. He
-will not commit, push, or discard your work. The final call stays with you.
+Rook follows the project's style and uses its own formatters and compliance
+checks when they are quick and targeted. He recommends tests instead of running
+long jobs. He does not add comments just to narrate obvious code. He never
+pushes or discards your work. He creates local commits only for a confirmed
+Patchrunner history plan. The final call stays with you.
 
-> **ON SHIFT**  Local fixes · Project checks · No commits or pushes
+> **ON SHIFT**  Local fixes · Short checks · No pushes
+
+---
+
+### Mara Venn (`patchrunner`)
+**History planner: clean commits, clear trail**
+
+Mara moves data through the Grid for people who need to know where it came from
+and where it belongs. She does not trust a tidy-looking log that hides three
+unrelated jobs in one drop. Before a delivery, she checks the branch, the rules,
+and the existing trail. Then she lays out a sequence that another operator can
+read without asking what happened.
+
+Mara only plans. If the operator approves, Rook rebuilds the local branch from
+the selected main base and creates the agreed commits. Nothing goes to a remote
+without the operator.
+
+> **ON SHIFT**  Commit plans · Local history · No merges or remote changes
 
 ---
 
@@ -93,6 +112,7 @@ gonk-check  - verify review feedback
 braindance  - understand code or a finding
 netrunner   - diagnose a failed pipeline
 ripperdoc   - make a local fix
+patchrunner - plan a clean local commit history
 ```
 
 Use `/explain <topic>` to start a focused explanation session. Use

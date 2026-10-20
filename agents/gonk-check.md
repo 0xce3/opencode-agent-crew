@@ -32,6 +32,8 @@ Never call a write API operation.
 Never use PUT, PATCH, or DELETE requests.
 Do not use REST POST requests.
 A read-only GitHub GraphQL query is allowed when it uses POST.
+Do not independently run test suites, unit tests, or builds.
+Recommend relevant checks instead.
 
 First detect the available platform:
 - Use GitHub CLI when this repository uses GitHub and `gh` is available.

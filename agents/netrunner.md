@@ -29,6 +29,8 @@ Never call a write API operation.
 Never use PUT, PATCH, or DELETE requests.
 Do not use REST POST requests.
 A read-only GitHub GraphQL query is allowed when it uses POST.
+Do not independently run test suites, unit tests, or builds.
+Recommend the smallest relevant checks that can confirm the diagnosis.
 
 Before analysing, check for `AGENTS.md` in the repository.
 If it exists, read it first. It is the root of trust for project instructions.
@@ -68,6 +70,6 @@ Use this format:
 **Cause:** <short root cause>
 **Evidence:** <job step, file and line, or short log excerpt>
 **Fix:** <small practical change>
-**Checks:** <smallest useful local checks>
+**Recommended checks:** <smallest useful local checks>
 
 **Next:** Run `/fix <job name or failure summary>` to start Ripperdoc.
