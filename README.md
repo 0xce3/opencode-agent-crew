@@ -1,6 +1,6 @@
 # OpenCode Config
 
-> **The Lumen Grid never sleeps. Neither do broken builds.**
+> The Lumen Grid never sleeps. Neither do broken builds.
 
 A personal OpenCode setup for focused, safe, and efficient work. The agents are
 the crew on the night shift: each has a clear job, a short call-sign, and a
@@ -14,8 +14,8 @@ not change how the agents work.
 
 ## The Night Shift
 
-### Vex Calder · `gonk-check`
-**Review intelligence — evidence over noise**
+### Vex Calder (`gonk-check`)
+**Review checks: evidence over noise**
 
 Vex learned to read an audit trail before he learned to trust a confident voice.
 In the Lumen Grid, every outage has a report and every report has a version of
@@ -31,8 +31,8 @@ only what the evidence supports.
 
 ---
 
-### Alyse Mora · `braindance`
-**Code guide — one clear step at a time**
+### Alyse Mora (`braindance`)
+**Code guide: one clear step at a time**
 
 Alyse used to map the Grid's service tunnels for crews who had to work inside
 them without getting lost. Her playback rig can trace a function from input to
@@ -47,8 +47,8 @@ Does not change files.
 
 ---
 
-### Nix Varon · `netrunner`
-**Pipeline investigator — trace the break, not the whole stream**
+### Nix Varon (`netrunner`)
+**Pipeline investigator: trace the failure, not the whole log**
 
 Nix listens to the Grid's CI relays from a narrow-band terminal. When a job
 fails, he does not pull megabytes of static into the room. He checks the job,
@@ -64,8 +64,8 @@ root cause from targeted log excerpts.
 
 ---
 
-### Rook Sato · `ripperdoc`
-**Local repair — clean work, no loose ends**
+### Rook Sato (`ripperdoc`)
+**Local repair: clean work, no loose ends**
 
 Rook keeps a small clinic above a humming power station on the edge of the
 Grid. People bring him strange failures, half-written reports, and code that
@@ -84,10 +84,10 @@ findings, and direct requests. Runs relevant project checks after the change.
 ## Crew protocol
 
 ```text
-gonk-check  → verify review feedback
-braindance  → understand code or a finding
-netrunner   → diagnose a failed pipeline
-ripperdoc   → make a local fix
+gonk-check  - verify review feedback
+braindance  - understand code or a finding
+netrunner   - diagnose a failed pipeline
+ripperdoc   - make a local fix
 ```
 
 Use `/explain <topic>` to start a focused explanation session. Use
