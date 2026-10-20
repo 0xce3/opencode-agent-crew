@@ -187,10 +187,14 @@ ticket ID is enough to hand work to Alyse, Rook, Iris, or Mika:
 ```text
 /explain amber_otter
 /fix amber_otter
+/resume amber_otter
 ```
 
 Ticket IDs use unique adjective and call-sign pairs such as `amber_otter`.
 They stay short enough to type and remain unique among stored tickets.
+
+`/resume` continues an interrupted or failed ticket from its stored status. It
+does not repeat Netrunner analysis.
 
 The local ticket store keeps short structured fields only. It never stores full
 logs or credentials. Each ticket retains at most eight short status events.

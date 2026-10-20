@@ -34,15 +34,21 @@ Run specialists only as direct child sessions. Never ask one subagent to launch
 another subagent. This avoids nested subagent depth limits.
 
 Use this sequence:
-1. Start Ripperdoc for an `open` ticket. Pass only the ticket ID.
-2. Start Watchdog for a static scope check. Pass the ticket ID, changed files,
+1. Start Ripperdoc for an `open`, `partial`, `mismatch`, `unverified`, or
+   `test_failed` ticket. Pass only the ticket ID and current ticket history.
+2. Start Watchdog for a `changed` ticket and request a static scope check. Pass the ticket ID, changed files,
    and current diff.
-3. Start Test Pilot only when Watchdog returns static MATCH. Pass the ticket ID,
+3. Start Test Pilot for a `scope_match` ticket. Pass the ticket ID,
    changed files, and current diff.
-4. Start Watchdog again for final verification after Test Pilot returns.
-5. On TEST FAILED, start Ripperdoc once more with the ticket ID and latest
-   ticket history. Do not make more than two repair attempts.
-6. After the second failed attempt, set the ticket status to `blocked` and stop.
+4. Start Watchdog for final verification after Test Pilot sets `test_pass`.
+5. For `approval_required`, wait for explicit user approval before starting Test
+   Pilot again.
+6. For `verified`, report the archived result and make no change.
+7. Do not make more than two repair attempts. After the second failed repair,
+   set the ticket status to `blocked` with actor `citadel` and stop.
+
+Use the ticket status and `repair_attempts` field to resume interrupted work.
+Never repeat Netrunner analysis for an existing ticket.
 
 Do not call a result VERIFIED unless the final Watchdog result is MATCH and the
 ticket status is `verified`. If Test Pilot requests approval, report
@@ -70,7 +76,7 @@ Use this format:
 <ticket ID>
 
 **Ripperdoc**
-<short result>
+<complete repair status, including ticket and pre-existing files>
 
 **Watchdog**
 <static and final verdict>

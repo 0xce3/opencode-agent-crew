@@ -37,6 +37,7 @@ type Ticket = {
   expiresAt?: string
   statusNote?: string
   events: TicketEvent[]
+  repairAttempts: number
 }
 
 const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
@@ -91,7 +92,7 @@ function limitList(value: readonly string[], field: string, maximumItems: number
 }
 
 function formatTicket(ticket: Ticket): string {
-  const history = ticket.events.map((event) => `${event.at} ${event.actor} ${event.status}: ${event.note}`).join(" | ")
+  const history = (ticket.events ?? []).map((event) => `${event.at} ${event.actor} ${event.status}: ${event.note}`).join(" | ")
   return [
     `id: ${ticket.id}`,
     `status: ${ticket.status}`,
@@ -103,6 +104,7 @@ function formatTicket(ticket: Ticket): string {
     `non_goals: ${ticket.nonGoals.join(" | ") || "none"}`,
     `recommended_checks: ${ticket.recommendedChecks.join(" | ") || "none"}`,
     `status_note: ${ticket.statusNote ?? "none"}`,
+    `repair_attempts: ${ticket.repairAttempts ?? (ticket.events ?? []).filter((event) => event.status === "assigned").length}`,
     `expires_at: ${ticket.expiresAt ?? "none"}`,
     `history: ${history || "none"}`,
   ].join("\n")
@@ -186,6 +188,7 @@ export default Plugin.define({
             createdAt: now,
             updatedAt: now,
             events: [{ at: now, actor: limitText(value.source, "source", 80), status: "open", note: "created" }],
+            repairAttempts: 0,
           }
           await ctx.storage.set(ticketKey(ticket.id), ticket)
           return { content: `id: ${ticket.id}\nstatus: open` }
@@ -233,6 +236,9 @@ export default Plugin.define({
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
+          if (ticket.status === status) {
+            return { content: `id: ${ticket.id}\nstatus: ${ticket.status}\nresult: unchanged` }
+          }
           if (!statusTransitions[ticket.status].includes(status)) {
             throw new Error(`cannot change ticket from ${ticket.status} to ${status}`)
           }
@@ -240,6 +246,8 @@ export default Plugin.define({
           ticket.status = status
           ticket.statusNote = limitText(note, "note", 500)
           ticket.updatedAt = now
+          ticket.repairAttempts ??= (ticket.events ?? []).filter((event) => event.status === "assigned").length
+          if (status === "assigned") ticket.repairAttempts += 1
           ticket.events = [...(ticket.events ?? []), {
             at: now,
             actor: limitText(actor, "actor", 80),
