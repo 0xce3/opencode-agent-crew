@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: agent-container <observe|repair|ci-read> <image> [command ...]
+
+Runs a short-lived rootless Podman container in the current Git workspace.
+The image must contain the project toolchain. No image is pulled automatically.
+USAGE
+}
+
+if [[ $# -lt 2 ]]; then
+  usage >&2
+  exit 2
+fi
+
+profile="$1"
+image="$2"
+shift 2
+
+if ! command -v podman >/dev/null 2>&1; then
+  printf 'podman is required. See SECURITY.md for installation steps.\n' >&2
+  exit 1
+fi
+
+workspace="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+  printf 'Run this command inside a Git workspace.\n' >&2
+  exit 1
+}
+
+if [[ $# -eq 0 ]]; then
+  command=(sh)
+else
+  command=("$@")
+fi
+
+common_options=(
+  --rm
+  --pull=never
+  --userns=keep-id
+  --user "$(id -u):$(id -g)"
+  --cap-drop=ALL
+  --security-opt=no-new-privileges
+  --pids-limit=512
+  --memory=4g
+  --cpus=4
+  --read-only
+  --tmpfs /tmp:rw,exec,nosuid,nodev,size=1g
+  --tmpfs /run:rw,nosuid,nodev,size=64m
+  --env HOME=/tmp/home
+  --workdir /workspace
+)
+
+case "$profile" in
+  observe)
+    exec podman run "${common_options[@]}" \
+      --network none \
+      --volume "$workspace:/workspace:ro" \
+      "$image" "${command[@]}"
+    ;;
+  repair)
+    exec podman run "${common_options[@]}" \
+      --network none \
+      --volume "$workspace:/workspace:rw" \
+      "$image" "${command[@]}"
+    ;;
+  ci-read)
+    token_file="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/secrets/github-ci-read.token"
+    if [[ ! -r "$token_file" ]]; then
+      printf 'Missing read-only CI token. Run scripts/store-github-ci-token first.\n' >&2
+      exit 1
+    fi
+    exec podman run "${common_options[@]}" \
+      --network slirp4netns:allow_host_loopback=false \
+      --volume "$workspace:/workspace:ro" \
+      --volume "$token_file:/run/secrets/github-ci-read:ro" \
+      "$image" sh -ceu 'export GH_TOKEN="$(cat /run/secrets/github-ci-read)"; exec "$@"' -- "${command[@]}"
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

@@ -8,3 +8,5 @@ service.json
 *.key
 *.pem
 *.token
+secrets/
+agent.env

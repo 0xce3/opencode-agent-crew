@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly secret_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode/secrets"
+readonly secret_file="$secret_dir/github-ci-read.token"
+
+umask 077
+mkdir -p "$secret_dir"
+chmod 700 "$secret_dir"
+
+read -r -s -p "Paste the GitHub read-only CI token: " token
+printf '\n'
+
+if [[ -z "$token" ]]; then
+  printf 'Token must not be empty.\n' >&2
+  exit 1
+fi
+
+temporary_file="$(mktemp "$secret_dir/.github-ci-read.token.XXXXXX")"
+printf '%s' "$token" >"$temporary_file"
+chmod 600 "$temporary_file"
+mv -f "$temporary_file" "$secret_file"
+unset token
+
+printf 'Stored read-only CI token in %s\n' "$secret_file"

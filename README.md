@@ -220,6 +220,9 @@ git config core.hooksPath .githooks
 
 The hook fails closed. A commit does not proceed when Gitleaks is unavailable.
 
+See [SECURITY.md](SECURITY.md) for the read-only GitHub CI token and rootless
+Podman profile setup.
+
 ## Disclaimer
 
 This configuration is provided "as is", without warranty of any kind. Use it
