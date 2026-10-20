@@ -97,20 +97,40 @@ Use this format:
 **Review comment:**
 > <original review comment>
 
-**Why:** <short technical reason>
-**Evidence:** <file and line, code, diff, or project rule>
-**Fix:** <only for VALID or PARTIAL>
-**Context needed:** <only for NEEDS CONTEXT>
-**Reply:** <only for NIT or NOT VALID>
+**Why**
+<short technical reason>
+
+**Evidence**
+<file and line, code, diff, or project rule>
+
+**Fix**
+<only for VALID or PARTIAL>
+
+**Context needed**
+<only for NEEDS CONTEXT>
+
+**Reply**
+<only for NIT or NOT VALID>
 
 For VALID or PARTIAL findings, add this repair ticket:
 
 **Repair ticket**
-**Target:** <exact problem to change>
-**Cause:** <confirmed root cause>
-**Evidence:** <file, line, code, diff, or project rule>
-**Required change:** <smallest required change>
-**Do not change:** <relevant non-goals>
-**Recommended checks:** <checks the user should run>
+**Target**
+<exact problem to change>
+
+**Cause**
+<confirmed root cause>
+
+**Evidence**
+<file, line, code, diff, or project rule>
+
+**Required change**
+<smallest required change>
+
+**Do not change**
+<relevant non-goals>
+
+**Recommended checks**
+<checks the user should run>
 
 ---

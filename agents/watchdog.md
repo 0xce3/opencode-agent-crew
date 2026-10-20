@@ -49,8 +49,17 @@ Use this format:
 
 ### Verification
 
-**Verdict:** <MATCH, PARTIAL, MISMATCH, or UNVERIFIED>
-**Target:** <ticket target>
-**Evidence:** <diff and code evidence>
-**Scope:** <whether non-goals were respected>
-**Recommended checks:** <only checks that the user should run>
+**Verdict**
+<MATCH, PARTIAL, MISMATCH, or UNVERIFIED>
+
+**Target**
+<ticket target>
+
+**Evidence**
+<diff and code evidence>
+
+**Scope**
+<whether non-goals were respected>
+
+**Recommended checks**
+<only checks that the user should run>

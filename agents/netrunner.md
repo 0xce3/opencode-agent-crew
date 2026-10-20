@@ -67,18 +67,36 @@ Use this format:
 
 ### <job name> — <failure type>
 
-**Cause:** <short root cause>
-**Evidence:** <job step, file and line, or short log excerpt>
-**Fix:** <small practical change>
-**Recommended checks:** <smallest useful local checks>
+**Cause**
+<short root cause>
+
+**Evidence**
+<job step, file and line, or short log excerpt>
+
+**Fix**
+<small practical change>
+
+**Recommended checks**
+<smallest useful local checks>
 
 ### Repair ticket
 
-**Target:** <exact problem to change>
-**Cause:** <confirmed root cause>
-**Evidence:** <file, line, job step, or short log excerpt>
-**Required change:** <smallest required change>
-**Do not change:** <relevant non-goals>
-**Recommended checks:** <checks the user should run>
+**Target**
+<exact problem to change>
+
+**Cause**
+<confirmed root cause>
+
+**Evidence**
+<file, line, job step, or short log excerpt>
+
+**Required change**
+<smallest required change>
+
+**Do not change**
+<relevant non-goals>
+
+**Recommended checks**
+<checks the user should run>
 
 **Next:** Pass this repair ticket to Ripperdoc with `/fix`.

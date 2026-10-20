@@ -93,8 +93,17 @@ Use this format:
 
 ### Fixed
 
-**Changed:** <files and short change>
-**Why:** <short reason>
-**Checks:** <completed short checks and recommended tests>
-**Verification:** <Watchdog verdict and short reason>
-**Blocked:** <only when relevant>
+**Changed**
+<files and short change>
+
+**Why**
+<short reason>
+
+**Checks**
+<completed short checks and recommended tests>
+
+**Verification**
+<Watchdog verdict and short reason>
+
+**Blocked**
+<only when relevant>
