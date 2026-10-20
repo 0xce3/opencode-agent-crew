@@ -146,7 +146,9 @@ ticket ID is enough to hand work to Alyse, Rook, or Iris:
 
 The local ticket store keeps short structured fields only. It never stores full
 logs or credentials. Iris marks a matching ticket as verified. Rook then removes
-the verified ticket. Tickets that do not match stay available for follow-up.
+the verified ticket. Before removal, Rook reports the ticket state, every file
+changed for the ticket, pre-existing user changes, short checks, and Iris's
+verdict. Tickets that do not match stay available for follow-up.
 
 ## House rules
 

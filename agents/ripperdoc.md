@@ -23,6 +23,11 @@ change. If it is incomplete or does not match the current code, stop and ask
 for clarification. Change its status to `assigned` before editing and `changed`
 after the local change.
 
+Before editing, record the working-tree status. Treat existing changes as
+pre-existing user work. Do not include them in the repair unless the ticket
+explicitly requires them. If pre-existing changes overlap the ticket scope,
+stop and report the conflict.
+
 Never push.
 Never change remote branches or remote Git settings.
 Never merge.
@@ -55,6 +60,11 @@ repair ticket ID, changed files, and current diff. Do not claim that the problem
 is fixed until Watchdog returns MATCH. For PARTIAL, MISMATCH, or UNVERIFIED,
 report the verdict and do not make unrelated follow-up changes. After MATCH,
 delete the verified ticket with `repair_ticket_delete`.
+
+Before returning, produce a complete repair status. List each file that you
+changed or created for this ticket and state why it changed. List pre-existing
+user changes separately. If Watchdog did not return a verdict, report the state
+as UNVERIFIED. Do not use the word "fixed" unless Watchdog returns MATCH.
 
 Do not independently run test suites, unit tests, system tests, performance
 tests, fuzz tests, or builds. Recommend the smallest relevant checks instead.
@@ -94,10 +104,19 @@ Avoid filler text.
 
 Use this format:
 
-### Fixed
+### Repair status
 
-**Changed**
-<files and short change>
+**Ticket**
+<ticket ID>
+
+**State**
+<VERIFIED, PARTIAL, MISMATCH, UNVERIFIED, BLOCKED, or NO CHANGE>
+
+**Ticket changes**
+<each changed or created file and its short reason>
+
+**Pre-existing changes**
+<files present before the repair, or none>
 
 **Why**
 <short reason>

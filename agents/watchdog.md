@@ -33,6 +33,8 @@ current Git diff. Compare the change with the ticket target, cause, evidence,
 required change, and non-goals.
 Do not trust the fixer summary without checking the diff.
 Do not infer success from a change that is unrelated to the ticket.
+Check that each reported ticket change belongs to the ticket. Identify changes
+outside the ticket scope. Treat pre-existing user changes as out of scope.
 
 Classify the result as MATCH, PARTIAL, MISMATCH, or UNVERIFIED.
 - MATCH: The diff addresses the required change and respects the non-goals.
@@ -61,6 +63,9 @@ Use this format:
 
 **Scope**
 <whether non-goals were respected>
+
+**Files checked**
+<files that Watchdog checked for this ticket>
 
 **Recommended checks**
 <only checks that the user should run>
