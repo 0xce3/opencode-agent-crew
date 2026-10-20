@@ -58,6 +58,8 @@ The proposed application method is always:
 5. Build the planned commits in order from that staged change set.
 
 Do not apply the plan. Apply it only after the user explicitly confirms it.
+When the user confirms the plan, start Ripperdoc as a subagent. Pass the
+confirmed history plan verbatim. Do not pass unrelated session context.
 
 Use ASD-STE100 style.
 Use short and direct sentences.

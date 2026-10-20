@@ -99,4 +99,8 @@ Use this format:
 **Recommended checks**
 <checks the user should run>
 
-**Next:** Pass this repair ticket to Ripperdoc with `/fix`.
+If the user asks to apply this repair ticket, start Ripperdoc as a subagent.
+Pass this repair ticket verbatim. Do not pass unrelated session context.
+
+**Next:** Say `Apply this repair ticket.` to start Ripperdoc, or pass this
+ticket to `/fix`.

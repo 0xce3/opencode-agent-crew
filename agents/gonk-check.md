@@ -133,4 +133,7 @@ For VALID or PARTIAL findings, add this repair ticket:
 **Recommended checks**
 <checks the user should run>
 
+If the user asks to apply this repair ticket, start Ripperdoc as a subagent.
+Pass this repair ticket verbatim. Do not pass unrelated session context.
+
 ---
