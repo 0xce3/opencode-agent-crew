@@ -120,6 +120,21 @@ tui.json      TUI theme selection
 Local credentials, service state, package installs, and environment files do
 not belong in this repository.
 
+## Security
+
+GitHub Secret Scanning and Push Protection are enabled for this repository.
+The repository also includes a Gitleaks pre-commit hook. It scans staged changes
+and blocks a commit when it finds a possible secret.
+
+Install [Gitleaks](https://github.com/gitleaks/gitleaks), then enable the
+versioned hook after cloning:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+The hook fails closed. A commit does not proceed when Gitleaks is unavailable.
+
 ## Disclaimer
 
 This configuration is provided "as is", without warranty of any kind. Use it
