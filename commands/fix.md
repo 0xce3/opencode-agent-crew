@@ -4,4 +4,4 @@ agent: ripperdoc
 subagent: true
 ---
 
-Fix this problem locally: $ARGUMENTS
+Apply this repair ticket locally: $ARGUMENTS

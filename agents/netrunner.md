@@ -72,4 +72,13 @@ Use this format:
 **Fix:** <small practical change>
 **Recommended checks:** <smallest useful local checks>
 
-**Next:** Run `/fix <job name or failure summary>` to start Ripperdoc.
+### Repair ticket
+
+**Target:** <exact problem to change>
+**Cause:** <confirmed root cause>
+**Evidence:** <file, line, job step, or short log excerpt>
+**Required change:** <smallest required change>
+**Do not change:** <relevant non-goals>
+**Recommended checks:** <checks the user should run>
+
+**Next:** Pass this repair ticket to Ripperdoc with `/fix`.

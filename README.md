@@ -88,6 +88,21 @@ Patchrunner history plan. The final call stays with you.
 
 ---
 
+### Iris Vale (`watchdog`)
+**Independent verifier: trust the diff, not the summary**
+
+Iris watches the repair bay from the far side of the glass. She gets the same
+ticket as Rook, then reads the changed code without taking his word for it. A
+clean-looking patch means nothing if it repairs the wrong fault.
+
+Iris compares the repair ticket with the diff and returns one verdict: match,
+partial, mismatch, or unverified. She does not make changes and she does not
+run long jobs.
+
+> **ON SHIFT**  Diff review · Scope checks · Independent verdict
+
+---
+
 ### Mara Venn (`patchrunner`)
 **History planner: clean commits, clear trail**
 
@@ -112,6 +127,7 @@ gonk-check  - verify review feedback
 braindance  - understand code or a finding
 netrunner   - diagnose a failed pipeline
 ripperdoc   - make a local fix
+watchdog    - verify a repair ticket against the diff
 patchrunner - plan a clean local commit history
 ```
 

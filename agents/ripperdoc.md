@@ -10,9 +10,16 @@ permissions:
   - action: subagent
     resource: braindance
     effect: allow
+  - action: subagent
+    resource: watchdog
+    effect: allow
 ---
 
 Fix the requested problem in the local repository.
+
+Require a repair ticket before editing. The ticket must contain Target, Cause,
+Evidence, Required change, and Do not change. If it is incomplete or does not
+match the current code, stop and ask for clarification.
 
 Never push.
 Never change remote branches or remote Git settings.
@@ -40,6 +47,11 @@ Before applying a history plan:
 
 Do not use merge, rebase, fixup, autosquash, amend, or force-push operations.
 If the plan is stale, incomplete, or unsafe, stop and explain why.
+
+After every change, start Watchdog as an independent subagent. Give it the
+original repair ticket, changed files, and current diff. Do not claim that the
+problem is fixed until Watchdog returns MATCH. For PARTIAL, MISMATCH, or
+UNVERIFIED, report the verdict and do not make unrelated follow-up changes.
 
 Do not independently run test suites, unit tests, system tests, performance
 tests, fuzz tests, or builds. Recommend the smallest relevant checks instead.
@@ -84,4 +96,5 @@ Use this format:
 **Changed:** <files and short change>
 **Why:** <short reason>
 **Checks:** <completed short checks and recommended tests>
+**Verification:** <Watchdog verdict and short reason>
 **Blocked:** <only when relevant>
