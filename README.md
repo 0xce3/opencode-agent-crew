@@ -1,6 +1,23 @@
-# OpenCode Config
+# OPENCode // NIGHT SHIFT
 
-> The Lumen Grid never sleeps. Neither do broken builds.
+<p align="center">
+  <strong>THE LUMEN GRID IS LIVE</strong><br>
+  <sub>Personal OpenCode setup · Night operations · Local-first repairs</sub>
+</p>
+
+<p align="center">
+  <img alt="OpenCode" src="https://img.shields.io/badge/OpenCode-config-9b5de5?style=flat-square">
+  <img alt="Crew" src="https://img.shields.io/badge/crew-4%20specialists-00d1b2?style=flat-square">
+  <img alt="Commits" src="https://img.shields.io/badge/commits-user%20controlled-f15bb5?style=flat-square">
+</p>
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  LUMEN GRID // NIGHT OPERATIONS                               │
+│  STATUS: ONLINE          CHANNEL: OPENCode                    │
+│  CREW: 4                 POLICY: NO COMMIT / NO PUSH          │
+└──────────────────────────────────────────────────────────────┘
+```
 
 A personal OpenCode setup for focused, safe, and efficient work. The agents are
 the crew on the night shift: each has a clear job, a short call-sign, and a
@@ -10,9 +27,9 @@ The names in OpenCode stay practical. Select `gonk-check`, `braindance`,
 `netrunner`, or `ripperdoc`. The people and stories below are fiction. They do
 not change how the agents work.
 
----
+## The crew
 
-## The Night Shift
+Four specialists. One shared rule: do the job, leave the system in your hands.
 
 ### Vex Calder (`gonk-check`)
 **Review checks: evidence over noise**
@@ -26,8 +43,7 @@ in the wire.
 He does not patch the system or answer a reviewer on your behalf. He gives you
 the finding, the evidence, and a short reply when the comment does not hold up.
 
-**On the clock:** Validates review comments. Groups duplicate concerns. Reports
-only what the evidence supports.
+> **ON SHIFT**  Review comments · Evidence checks · Concise findings
 
 ---
 
@@ -42,8 +58,7 @@ Then the next turn. The rest waits until someone asks.
 Ask Alyse about a line, a function, a feature, or a finding. She reads the
 relevant code, explains it in small steps, and leaves room for questions.
 
-**On the clock:** Explains code and findings with short, practical examples.
-Does not change files.
+> **ON SHIFT**  Code walkthroughs · Small steps · No file changes
 
 ---
 
@@ -59,8 +74,7 @@ Nix reports the likely cause and the evidence behind it. He can ask the local
 repair specialist to work on a fix, but he never changes the repository or
 touches the remote pipeline himself.
 
-**On the clock:** Finds the latest relevant failed pipeline and explains its
-root cause from targeted log excerpts.
+> **ON SHIFT**  CI failures · Targeted log search · Root-cause analysis
 
 ---
 
@@ -76,12 +90,11 @@ Rook follows the project's style and uses its own tests, formatters, and
 compliance checks. He does not add comments just to narrate obvious code. He
 will not commit, push, or discard your work. The final call stays with you.
 
-**On the clock:** Makes focused local fixes for pipeline failures, review
-findings, and direct requests. Runs relevant project checks after the change.
+> **ON SHIFT**  Local fixes · Project checks · No commits or pushes
 
 ---
 
-## Crew protocol
+## Quick dispatch
 
 ```text
 gonk-check  - verify review feedback
@@ -93,15 +106,13 @@ ripperdoc   - make a local fix
 Use `/explain <topic>` to start a focused explanation session. Use
 `/fix <problem>` to ask Rook for a local fix in a child session.
 
-### Lines the crew will not cross
+## House rules
 
 - No agent commits or pushes changes.
 - Read-only agents do not edit files or change remote systems.
 - Ripperdoc does not discard user changes or change Git state.
 - Project instructions and existing code style guide the work.
 - Logs and tool output are narrowed to the evidence needed.
-
----
 
 ## Configuration
 
