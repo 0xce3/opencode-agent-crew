@@ -103,6 +103,33 @@ run long jobs.
 
 ---
 
+### Mika Sol (`test-pilot`)
+**Validation pilot: run the small check that matters**
+
+Mika knows which service tunnels lead into a live container and which ones end
+at a locked bulkhead. Before she starts a check, she finds the active runtime,
+the project command, and its likely cost. A five-hour system run is not a quick
+sanity check. She asks before crossing that line.
+
+Mika runs only the focused test that can prove or disprove a repair. She also
+runs short project-defined format, lint, spell, or delta compliance checks when
+they apply. Her result goes back to Iris before any repair is approved.
+
+> **ON SHIFT**  Container checks · Targeted tests · Bounded runtime
+
+---
+
+### Dax Mercer (`sweeper`)
+**Archive cleanup: leave no stale signal behind**
+
+Dax keeps the repair archive small. He removes only verified tickets after
+their retention window ends. He does not touch project files, active tickets,
+or failed investigations.
+
+> **ON SHIFT**  Expired archives · Local store only · No project access
+
+---
+
 ### Mara Venn (`patchrunner`)
 **History planner: clean commits, clear trail**
 
@@ -128,7 +155,9 @@ braindance  - understand code or a finding
 netrunner   - diagnose a failed pipeline
 ripperdoc   - make a local fix
 watchdog    - verify a repair ticket against the diff
+test-pilot  - run bounded targeted validation
 patchrunner - plan a clean local commit history
+sweeper     - remove expired ticket archives
 ```
 
 Use `/explain <topic>` to start a focused explanation session. Use
@@ -137,7 +166,7 @@ Use `/explain <topic>` to start a focused explanation session. Use
 ### Repair tickets
 
 Nix and Vex store confirmed findings as compact local repair tickets. The
-ticket ID is enough to hand work to Alyse, Rook, or Iris:
+ticket ID is enough to hand work to Alyse, Rook, Iris, or Mika:
 
 ```text
 /explain rt_<id>
@@ -145,16 +174,19 @@ ticket ID is enough to hand work to Alyse, Rook, or Iris:
 ```
 
 The local ticket store keeps short structured fields only. It never stores full
-logs or credentials. Iris marks a matching ticket as verified. Rook then removes
-the verified ticket. Before removal, Rook reports the ticket state, every file
-changed for the ticket, pre-existing user changes, short checks, and Iris's
-verdict. Tickets that do not match stay available for follow-up.
+logs or credentials. Each ticket retains at most eight short status events.
+Iris marks a ticket as verified only after the static diff check and Mika's
+targeted validation both pass. Verified tickets stay local for 24 hours, so
+`/explain <ticket-id>` can reconstruct the flow. Expired verified tickets are
+removed automatically when the store is used, or manually with `/cleanup`.
+Tickets that do not match stay available for follow-up.
 
 ## House rules
 
 - No agent commits or pushes changes.
 - Read-only agents do not edit files or change remote systems.
-- Ripperdoc does not discard user changes or change Git state.
+- Ripperdoc does not discard user changes. It changes local Git history only for
+  a confirmed Patchrunner plan.
 - Project instructions and existing code style guide the work.
 - Logs and tool output are narrowed to the evidence needed.
 

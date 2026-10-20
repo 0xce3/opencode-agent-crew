@@ -21,7 +21,7 @@ Require a repair ticket ID before editing. Load it with `repair_ticket_get`.
 The ticket must contain Target, Cause, Evidence, Required change, and Do not
 change. If it is incomplete or does not match the current code, stop and ask
 for clarification. Change its status to `assigned` before editing and `changed`
-after the local change.
+after the local change. Use `ripperdoc` as the status-change actor.
 
 Before editing, record the working-tree status. Treat existing changes as
 pre-existing user work. Do not include them in the repair unless the ticket
@@ -59,7 +59,11 @@ After every change, start Watchdog as an independent subagent. Give it only the
 repair ticket ID, changed files, and current diff. Do not claim that the problem
 is fixed until Watchdog returns MATCH. For PARTIAL, MISMATCH, or UNVERIFIED,
 report the verdict and do not make unrelated follow-up changes. After MATCH,
-delete the verified ticket with `repair_ticket_delete`.
+keep the verified ticket archive available for later explanation.
+
+If validation returns TEST FAILED, use the ticket failure note to make one more
+targeted repair attempt. Do not make more than two repair attempts for one ticket.
+If the second attempt fails, set the ticket to `blocked` and stop.
 
 Before returning, produce a complete repair status. List each file that you
 changed or created for this ticket and state why it changed. List pre-existing

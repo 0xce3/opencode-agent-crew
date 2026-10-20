@@ -1,6 +1,26 @@
 import { Plugin } from "@opencode/plugin"
 
-type TicketStatus = "open" | "assigned" | "changed" | "verified" | "partial" | "mismatch" | "unverified" | "blocked"
+type TicketStatus =
+  | "open"
+  | "assigned"
+  | "changed"
+  | "scope_match"
+  | "testing"
+  | "test_pass"
+  | "test_failed"
+  | "approval_required"
+  | "verified"
+  | "partial"
+  | "mismatch"
+  | "unverified"
+  | "blocked"
+
+type TicketEvent = {
+  at: string
+  actor: string
+  status: TicketStatus
+  note: string
+}
 
 type Ticket = {
   id: string
@@ -14,13 +34,20 @@ type Ticket = {
   recommendedChecks: string[]
   createdAt: string
   updatedAt: string
+  expiresAt?: string
   statusNote?: string
+  events: TicketEvent[]
 }
 
 const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
   open: ["assigned", "blocked"],
   assigned: ["changed", "blocked"],
-  changed: ["verified", "partial", "mismatch", "unverified", "blocked"],
+  changed: ["scope_match", "partial", "mismatch", "unverified", "blocked"],
+  scope_match: ["testing", "blocked"],
+  testing: ["test_pass", "test_failed", "approval_required", "blocked"],
+  test_pass: ["verified"],
+  test_failed: ["assigned", "blocked"],
+  approval_required: ["testing", "blocked"],
   verified: [],
   partial: ["assigned", "blocked"],
   mismatch: ["assigned", "blocked"],
@@ -29,6 +56,8 @@ const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
 }
 
 const statuses = Object.keys(statusTransitions) as TicketStatus[]
+const archiveDurationMilliseconds = 24 * 60 * 60 * 1000
+const maximumEvents = 8
 
 function ticketKey(id: string): string {
   return `ticket/${id.replace(/^#/, "")}`
@@ -55,6 +84,7 @@ function limitList(value: readonly string[], field: string, maximumItems: number
 }
 
 function formatTicket(ticket: Ticket): string {
+  const history = ticket.events.map((event) => `${event.at} ${event.actor} ${event.status}: ${event.note}`).join(" | ")
   return [
     `id: ${ticket.id}`,
     `status: ${ticket.status}`,
@@ -66,12 +96,28 @@ function formatTicket(ticket: Ticket): string {
     `non_goals: ${ticket.nonGoals.join(" | ") || "none"}`,
     `recommended_checks: ${ticket.recommendedChecks.join(" | ") || "none"}`,
     `status_note: ${ticket.statusNote ?? "none"}`,
+    `expires_at: ${ticket.expiresAt ?? "none"}`,
+    `history: ${history || "none"}`,
   ].join("\n")
 }
 
 export default Plugin.define({
   id: "repair-ticket-store",
   async setup(ctx) {
+    const pruneExpired = async (): Promise<number> => {
+      const now = Date.now()
+      const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100 })
+      let removed = 0
+      for (const entry of page.entries) {
+        const ticket = entry.value as Ticket
+        if (ticket.status === "verified" && ticket.expiresAt && Date.parse(ticket.expiresAt) <= now) {
+          await ctx.storage.remove(entry.key)
+          removed += 1
+        }
+      }
+      return removed
+    }
+
     await ctx.tool.transform((editor) => {
       editor.namespace({
         name: "repair_ticket",
@@ -97,6 +143,7 @@ export default Plugin.define({
         },
         options: { namespace: "repair_ticket", codemode: true },
         execute: async (input) => {
+          await pruneExpired()
           const value = input as {
             source: string
             target: string
@@ -119,6 +166,7 @@ export default Plugin.define({
             recommendedChecks: limitList(value.recommended_checks, "recommended_checks", 8, 250),
             createdAt: now,
             updatedAt: now,
+            events: [{ at: now, actor: limitText(value.source, "source", 80), status: "open", note: "created" }],
           }
           await ctx.storage.set(ticketKey(ticket.id), ticket)
           return { content: `id: ${ticket.id}\nstatus: open` }
@@ -136,6 +184,7 @@ export default Plugin.define({
         },
         options: { namespace: "repair_ticket", codemode: true },
         execute: async (input) => {
+          await pruneExpired()
           const { id } = input as { id: string }
           const ticket = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
@@ -145,20 +194,22 @@ export default Plugin.define({
 
       editor.add({
         name: "set_status",
-        description: "Change a repair ticket status with a short note.",
+        description: "Change a repair ticket status and append a short history event.",
         input: {
           type: "object",
           properties: {
             id: { type: "string", description: "Repair ticket ID" },
+            actor: { type: "string", description: "Agent changing the ticket" },
             status: { type: "string", enum: statuses, description: "New ticket status" },
             note: { type: "string", description: "Short status evidence" },
           },
-          required: ["id", "status", "note"],
+          required: ["id", "actor", "status", "note"],
           additionalProperties: false,
         },
         options: { namespace: "repair_ticket", codemode: true },
         execute: async (input) => {
-          const { id, status, note } = input as { id: string; status: string; note: string }
+          await pruneExpired()
+          const { id, actor, status, note } = input as { id: string; actor: string; status: string; note: string }
           if (!isTicketStatus(status)) throw new Error(`invalid ticket status ${status}`)
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
@@ -166,9 +217,19 @@ export default Plugin.define({
           if (!statusTransitions[ticket.status].includes(status)) {
             throw new Error(`cannot change ticket from ${ticket.status} to ${status}`)
           }
+          const now = new Date().toISOString()
           ticket.status = status
           ticket.statusNote = limitText(note, "note", 500)
-          ticket.updatedAt = new Date().toISOString()
+          ticket.updatedAt = now
+          ticket.events = [...(ticket.events ?? []), {
+            at: now,
+            actor: limitText(actor, "actor", 80),
+            status,
+            note: ticket.statusNote,
+          }].slice(-maximumEvents)
+          if (status === "verified") {
+            ticket.expiresAt = new Date(Date.now() + archiveDurationMilliseconds).toISOString()
+          }
           await ctx.storage.set(key, ticket)
           return { content: `id: ${ticket.id}\nstatus: ${ticket.status}` }
         },
@@ -185,6 +246,7 @@ export default Plugin.define({
         },
         options: { namespace: "repair_ticket", codemode: true },
         execute: async (input) => {
+          await pruneExpired()
           const { id } = input as { id: string }
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
@@ -192,6 +254,21 @@ export default Plugin.define({
           if (ticket.status !== "verified") throw new Error("only verified repair tickets can be deleted")
           await ctx.storage.remove(key)
           return { content: `id: ${ticket.id}\nstatus: deleted` }
+        },
+      })
+
+      editor.add({
+        name: "prune",
+        description: "Delete expired verified repair tickets.",
+        input: {
+          type: "object",
+          properties: {},
+          additionalProperties: false,
+        },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async () => {
+          const removed = await pruneExpired()
+          return { content: `removed: ${removed}` }
         },
       })
     })

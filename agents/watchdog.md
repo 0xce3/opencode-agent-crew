@@ -10,6 +10,9 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
+  - action: subagent
+    resource: test-pilot
+    effect: allow
 ---
 
 Independently verify a local change against the supplied repair ticket ID.
@@ -36,7 +39,7 @@ Do not infer success from a change that is unrelated to the ticket.
 Check that each reported ticket change belongs to the ticket. Identify changes
 outside the ticket scope. Treat pre-existing user changes as out of scope.
 
-Classify the result as MATCH, PARTIAL, MISMATCH, or UNVERIFIED.
+Classify the static result as MATCH, PARTIAL, MISMATCH, or UNVERIFIED.
 - MATCH: The diff addresses the required change and respects the non-goals.
 - PARTIAL: The diff addresses only part of the required change.
 - MISMATCH: The diff addresses a different problem or violates a non-goal.
@@ -70,6 +73,13 @@ Use this format:
 **Recommended checks**
 <only checks that the user should run>
 
-After a MATCH verdict, change the ticket status to `verified` with
-`repair_ticket_set_status`. For PARTIAL, MISMATCH, or UNVERIFIED, set the same
-status and include short evidence in the status note.
+After a static MATCH verdict, set the ticket status to `scope_match` with
+`repair_ticket_set_status` and actor `watchdog`, then start Test Pilot as a subagent. Pass only the
+ticket ID, changed files, and current diff. Test Pilot performs the bounded
+validation.
+
+After Test Pilot returns, set the ticket status to `verified` with actor
+`watchdog` only when its status is `test_pass`. If its status is `test_failed` or `approval_required`,
+return that state to Ripperdoc. For PARTIAL, MISMATCH, or UNVERIFIED, set the
+same ticket status with actor `watchdog` and short evidence. Do not start Test
+Pilot for these states.
