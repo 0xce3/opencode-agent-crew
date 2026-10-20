@@ -10,9 +10,6 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
-  - action: subagent
-    resource: test-pilot
-    effect: allow
 ---
 
 Independently verify a local change against the supplied repair ticket ID.
@@ -47,6 +44,9 @@ Classify the static result as MATCH, PARTIAL, MISMATCH, or UNVERIFIED.
 - MISMATCH: The diff addresses a different problem or violates a non-goal.
 - UNVERIFIED: The available code and evidence do not support a reliable result.
 
+Use `[PASS] MATCH` for a static match. Use `[WARN] PARTIAL` for a partial
+match. Use `[FAIL] MISMATCH` or `[FAIL] UNVERIFIED` for failed verification.
+
 Use ASD-STE100 style.
 Use short and direct sentences.
 Use active voice.
@@ -75,13 +75,11 @@ Use this format:
 **Recommended checks**
 <only checks that the user should run>
 
-After a static MATCH verdict, set the ticket status to `scope_match` with
-`repair_ticket_set_status` and actor `watchdog`, then start Test Pilot as a subagent. Pass only the
-ticket ID, changed files, and current diff. Test Pilot performs the bounded
-validation.
+When Regent requests a static scope check, inspect the diff and set
+`scope_match`, `partial`, `mismatch`, or `unverified` with actor `watchdog`.
 
-After Test Pilot returns, set the ticket status to `verified` with actor
-`watchdog` only when its status is `test_pass`. If its status is `test_failed` or `approval_required`,
-return that state to Ripperdoc. For PARTIAL, MISMATCH, or UNVERIFIED, set the
-same ticket status with actor `watchdog` and short evidence. Do not start Test
-Pilot for these states.
+When Regent requests final verification, inspect the same diff and ticket
+history. Set `verified` with actor `watchdog` only when the static scope check
+matched and Test Pilot set `test_pass`. If Test Pilot set `test_failed` or
+`approval_required`, report that state without changing it. Never start a
+subagent.

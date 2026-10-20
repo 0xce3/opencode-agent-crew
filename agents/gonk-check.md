@@ -118,11 +118,6 @@ For VALID or PARTIAL findings, create a repair ticket with
 `repair_ticket_create`. Store only short evidence. Never store complete review
 threads or credentials. Announce only the ticket ID and its `open` status.
 
-If the user asks to apply the ticket, start Ripperdoc as a subagent. Pass only
-the ticket ID. Ripperdoc must load it with `repair_ticket_get`.
-
-After Ripperdoc returns, report its repair status and Watchdog verdict in this
-session. Do not summarize it as fixed unless the verdict is MATCH. If Ripperdoc
-or Watchdog did not return a result, state UNVERIFIED and explain what is missing.
+**Next:** Run `/fix <ticket-id>` to start Regent.
 
 ---

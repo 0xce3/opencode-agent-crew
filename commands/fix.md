@@ -1,8 +1,7 @@
 ---
-description: Fix a local code problem in a background child session
-agent: ripperdoc
-subagent: true
+description: Coordinate a repair ticket through the specialist crew
+agent: regent
+subagent: false
 ---
 
-Load repair ticket `$ARGUMENTS` with `repair_ticket_get`.
-Apply only that ticket locally.
+Coordinate repair ticket `$ARGUMENTS`.

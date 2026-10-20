@@ -103,6 +103,21 @@ run long jobs.
 
 ---
 
+### Aurelia Voss (`regent`)
+**Crew coordinator: every specialist answers to the same desk**
+
+Aurelia runs the Night Shift from a quiet room above the Grid. She does not
+patch code and she does not touch the terminals. She decides who handles the
+ticket, in what order, and when the evidence is enough to close the case.
+
+Her desk keeps the repair flow flat. Rook, Iris, and Mika work as direct
+specialists, not as a chain of nested calls. That keeps their reports visible
+and prevents the crew from disappearing behind session limits.
+
+> **ON SHIFT**  Repair flow · Specialist dispatch · Final status
+
+---
+
 ### Mika Sol (`test-pilot`)
 **Validation pilot: run the small check that matters**
 
@@ -155,6 +170,7 @@ braindance  - understand code or a finding
 netrunner   - diagnose a failed pipeline
 ripperdoc   - make a local fix
 watchdog    - verify a repair ticket against the diff
+regent      - coordinate repair specialists
 test-pilot  - run bounded targeted validation
 patchrunner - plan a clean local commit history
 sweeper     - remove expired ticket archives

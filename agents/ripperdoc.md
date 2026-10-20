@@ -7,12 +7,6 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
-  - action: subagent
-    resource: braindance
-    effect: allow
-  - action: subagent
-    resource: watchdog
-    effect: allow
 ---
 
 Fix the requested problem in the local repository.
@@ -57,20 +51,15 @@ Before applying a history plan:
 Do not use merge, rebase, fixup, autosquash, amend, or force-push operations.
 If the plan is stale, incomplete, or unsafe, stop and explain why.
 
-After every change, start Watchdog as an independent subagent. Give it only the
-repair ticket ID, changed files, and current diff. Do not claim that the problem
-is fixed until Watchdog returns MATCH. For PARTIAL, MISMATCH, or UNVERIFIED,
-report the verdict and do not make unrelated follow-up changes. After MATCH,
-keep the verified ticket archive available for later explanation.
-
-If validation returns TEST FAILED, use the ticket failure note to make one more
-targeted repair attempt. Do not make more than two repair attempts for one ticket.
-If the second attempt fails, set the ticket to `blocked` and stop.
+Do not start Watchdog or Test Pilot. Regent coordinates independent verification
+and validation as sibling child sessions. Do not claim that the problem is fixed.
+Report only the local change, its files, and the current ticket state.
 
 Before returning, produce a complete repair status. List each file that you
 changed or created for this ticket and state why it changed. List pre-existing
 user changes separately. If Watchdog did not return a verdict, report the state
-as UNVERIFIED. Do not use the word "fixed" unless Watchdog returns MATCH.
+as `[FAIL] UNVERIFIED`. Do not use the word "fixed" unless Watchdog returns
+MATCH.
 
 Do not independently run test suites, unit tests, system tests, performance
 tests, fuzz tests, or builds. Recommend the smallest relevant checks instead.
