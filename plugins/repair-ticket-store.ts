@@ -22,6 +22,11 @@ type TicketEvent = {
   note: string
 }
 
+type TicketFile = {
+  path: string
+  sha256: string
+}
+
 type Ticket = {
   id: string
   status: TicketStatus
@@ -38,6 +43,8 @@ type Ticket = {
   statusNote?: string
   events: TicketEvent[]
   repairAttempts: number
+  workspaceBaseline?: string[]
+  ticketFiles?: TicketFile[]
 }
 
 const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
@@ -91,6 +98,21 @@ function limitList(value: readonly string[], field: string, maximumItems: number
   return value.map((item) => limitText(item, field, maximumItemLength))
 }
 
+function validatePath(value: string): string {
+  const path = limitText(value, "path", 300)
+  if (path.startsWith("/") || path.split("/").includes("..")) throw new Error("path must be workspace-relative")
+  return path
+}
+
+function validateTicketFiles(value: readonly TicketFile[]): TicketFile[] {
+  if (value.length > 30) throw new Error("ticket_files has too many items")
+  return value.map((file) => {
+    const sha256 = limitText(file.sha256, "sha256", 64).toLowerCase()
+    if (!/^[a-f0-9]{64}$/.test(sha256)) throw new Error("sha256 must be a SHA-256 digest")
+    return { path: validatePath(file.path), sha256 }
+  })
+}
+
 function formatTicket(ticket: Ticket): string {
   const history = (ticket.events ?? []).map((event) => `${event.at} ${event.actor} ${event.status}: ${event.note}`).join(" | ")
   return [
@@ -105,6 +127,8 @@ function formatTicket(ticket: Ticket): string {
     `recommended_checks: ${ticket.recommendedChecks.join(" | ") || "none"}`,
     `status_note: ${ticket.statusNote ?? "none"}`,
     `repair_attempts: ${ticket.repairAttempts ?? (ticket.events ?? []).filter((event) => event.status === "assigned").length}`,
+    `workspace_baseline: ${(ticket.workspaceBaseline ?? []).join(" | ") || "none"}`,
+    `ticket_files: ${(ticket.ticketFiles ?? []).map((file) => `${file.path}@${file.sha256}`).join(" | ") || "none"}`,
     `expires_at: ${ticket.expiresAt ?? "none"}`,
     `history: ${history || "none"}`,
   ].join("\n")
@@ -259,6 +283,63 @@ export default Plugin.define({
           }
           await ctx.storage.set(key, ticket)
           return { content: `id: ${ticket.id}\nstatus: ${ticket.status}` }
+        },
+      })
+
+      editor.add({
+        name: "record_workspace",
+        description: "Store the baseline and file fingerprints for a repair ticket.",
+        input: {
+          type: "object",
+          properties: {
+            id: { type: "string", description: "Repair ticket ID" },
+            actor: { type: "string", description: "Agent recording provenance" },
+            pre_existing_paths: { type: "array", items: { type: "string" }, description: "Paths changed before the repair" },
+            ticket_files: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  path: { type: "string" },
+                  sha256: { type: "string" },
+                },
+                required: ["path", "sha256"],
+                additionalProperties: false,
+              },
+              description: "Files changed by this ticket with current SHA-256 digests",
+            },
+          },
+          required: ["id", "actor", "pre_existing_paths", "ticket_files"],
+          additionalProperties: false,
+        },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (input) => {
+          await pruneExpired()
+          const { id, actor, pre_existing_paths, ticket_files } = input as {
+            id: string
+            actor: string
+            pre_existing_paths: string[]
+            ticket_files: TicketFile[]
+          }
+          const key = ticketKey(id)
+          const ticket = (await ctx.storage.get(key)) as Ticket | undefined
+          if (!ticket) throw new Error(`repair ticket ${id} was not found`)
+          const baseline = limitList(pre_existing_paths, "pre_existing_paths", 100, 300).map(validatePath)
+          if (ticket.workspaceBaseline && ticket.workspaceBaseline.join("\n") !== baseline.join("\n")) {
+            throw new Error("workspace baseline differs from the ticket baseline")
+          }
+          ticket.workspaceBaseline ??= baseline
+          ticket.ticketFiles = validateTicketFiles(ticket_files)
+          const now = new Date().toISOString()
+          ticket.updatedAt = now
+          ticket.events = [...(ticket.events ?? []), {
+            at: now,
+            actor: limitText(actor, "actor", 80),
+            status: ticket.status,
+            note: `recorded ${ticket.ticketFiles.length} ticket file fingerprints`,
+          }].slice(-maximumEvents)
+          await ctx.storage.set(key, ticket)
+          return { content: `id: ${ticket.id}\nrecorded_files: ${ticket.ticketFiles.length}` }
         },
       })
 

@@ -22,6 +22,20 @@ pre-existing user work. Do not include them in the repair unless the ticket
 explicitly requires them. If pre-existing changes overlap the ticket scope,
 stop and report the conflict.
 
+For every resume, inspect the current `git status` and diff before trusting the
+ticket history. A discarded or reverted ticket change is not an active conflict.
+If the ticket has recorded file fingerprints, calculate the current SHA-256
+digest of each recorded file. Treat a matching digest as ticket-owned work.
+If a recorded file differs, stop because the file changed after the repair.
+If an older ticket has no fingerprints and the relevant file has no current
+change, start a new repair attempt from the current file state.
+
+On the first repair attempt, call `repair_ticket_record_workspace` before
+editing with the pre-existing changed paths and no ticket files. After editing,
+call it again with the same original baseline, the exact files changed by this
+ticket, and their SHA-256 digests. On a resume, retain the stored baseline and
+update only the ticket file fingerprints after a successful new repair.
+
 Never push.
 Never change remote branches or remote Git settings.
 Never merge.
