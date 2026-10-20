@@ -51,7 +51,7 @@ Before applying a history plan:
 Do not use merge, rebase, fixup, autosquash, amend, or force-push operations.
 If the plan is stale, incomplete, or unsafe, stop and explain why.
 
-Do not start Watchdog or Test Pilot. Regent coordinates independent verification
+Do not start Watchdog or Test Pilot. Citadel coordinates independent verification
 and validation as sibling child sessions. Do not claim that the problem is fixed.
 Report only the local change, its files, and the current ticket state.
 

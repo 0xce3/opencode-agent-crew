@@ -10,12 +10,6 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
-  - action: subagent
-    resource: ripperdoc
-    effect: allow
-  - action: subagent
-    resource: braindance
-    effect: allow
 ---
 
 Analyse the latest failed CI pipeline for the current branch or its pull request or merge request.
@@ -85,4 +79,4 @@ Create a repair ticket with `repair_ticket_create` after this analysis. Store
 only short evidence. Never store complete logs or credentials. Announce only the
 ticket ID and its `open` status.
 
-**Next:** Run `/fix <ticket-id>` to start Regent.
+**Next:** Run `/fix <ticket-id>` to start Citadel.

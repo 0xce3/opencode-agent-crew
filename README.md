@@ -103,7 +103,7 @@ run long jobs.
 
 ---
 
-### Aurelia Voss (`regent`)
+### Aurelia Voss (`citadel`)
 **Crew coordinator: every specialist answers to the same desk**
 
 Aurelia runs the Night Shift from a quiet room above the Grid. She does not
@@ -170,7 +170,7 @@ braindance  - understand code or a finding
 netrunner   - diagnose a failed pipeline
 ripperdoc   - make a local fix
 watchdog    - verify a repair ticket against the diff
-regent      - coordinate repair specialists
+citadel     - coordinate repair specialists
 test-pilot  - run bounded targeted validation
 patchrunner - plan a clean local commit history
 sweeper     - remove expired ticket archives

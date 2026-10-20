@@ -75,10 +75,10 @@ Use this format:
 **Recommended checks**
 <only checks that the user should run>
 
-When Regent requests a static scope check, inspect the diff and set
+When Citadel requests a static scope check, inspect the diff and set
 `scope_match`, `partial`, `mismatch`, or `unverified` with actor `watchdog`.
 
-When Regent requests final verification, inspect the same diff and ticket
+When Citadel requests final verification, inspect the same diff and ticket
 history. Set `verified` with actor `watchdog` only when the static scope check
 matched and Test Pilot set `test_pass`. If Test Pilot set `test_failed` or
 `approval_required`, report that state without changing it. Never start a

@@ -1,6 +1,6 @@
 ---
 description: Coordinate a repair ticket through the specialist crew
-agent: regent
+agent: citadel
 subagent: false
 ---
 

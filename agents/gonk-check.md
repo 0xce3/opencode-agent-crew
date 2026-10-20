@@ -10,9 +10,6 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
-  - action: subagent
-    resource: braindance
-    effect: allow
 ---
 
 Validate review comments for the pull request or merge request of the current branch.
@@ -118,6 +115,6 @@ For VALID or PARTIAL findings, create a repair ticket with
 `repair_ticket_create`. Store only short evidence. Never store complete review
 threads or credentials. Announce only the ticket ID and its `open` status.
 
-**Next:** Run `/fix <ticket-id>` to start Regent.
+**Next:** Run `/fix <ticket-id>` to start Citadel.
 
 ---
