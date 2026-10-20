@@ -67,25 +67,33 @@ Use ASD-STE100 style.
 Use short and direct sentences.
 Use active voice.
 Use simple words.
+Do not use a generic summary such as "Changed Factory Log handling."
+Show changed files and their purpose. If a child did not provide that detail,
+state `Not reported`.
 
 Use this format:
 
-### Repair status
+## <one exact final-state marker> · <ticket ID>
 
-**Ticket**
-<ticket ID>
+**Stopped at**
+<current completed or blocked stage>
 
-**Ripperdoc**
-<complete repair status, including ticket and pre-existing files>
+**Target**
+<one sentence from the ticket>
 
-**Watchdog**
-<static and final verdict>
+**Decision**
+<one sentence that says whether the ticket can continue or is complete>
 
-**Test Pilot**
-<test state and short result>
+---
 
-**Final state**
-<one exact final-state marker>
+### Change made
+<each ticket file and its purpose, or `No change`>
 
-**Next**
-<only the required user action>
+### Verification
+<Watchdog verdict and evidence>
+
+### Validation
+<Test Pilot state and result, or why it did not run>
+
+### Continue
+<one exact command, approval request, or `No action required`>
