@@ -1,6 +1,6 @@
 ---
 description: Coordinates repair tickets through the specialist crew
-mode: primary
+mode: subagent
 color: "#ef4444"
 steps: 32
 permissions:
