@@ -177,7 +177,30 @@ sweeper     - remove expired ticket archives
 ```
 
 Use `/explain <topic>` to start a focused explanation session. Use
-`/fix <ticket-id>` to ask Rook for a local fix in a child session.
+`/fix <ticket-id>` or `/resume <ticket-id>` to enter an existing repair ticket.
+For a new problem, describe the complete goal to Citadel; it delegates the
+investigation and continues the requested repair without another command.
+
+## Citadel and Ensemble teams
+
+`citadel` is the only default primary agent. It uses OpenCode Ensemble 0.20.0 for
+complex work that benefits from independent, parallel Night Shift sessions.
+Citadel remains the single master chat and coordinates shared tasks,
+dependencies, direct member messages, status, controlled shutdown, and session
+navigation. Small requests stay in the master chat.
+Citadel asks once for explicit approval of Ripperdoc's concrete plan before
+edits, then continues all permitted verification stages automatically.
+
+The Ensemble web dashboard and automatic branch merging are disabled. Night
+Shift members run without Ensemble worktrees so existing repair-ticket,
+approval, no-push, and no-merge rules remain effective. Ensemble has no native
+tmux pane visualization; use member status and explicit session navigation from
+the master chat. On OpenCode 2, Ensemble also removes shell access from
+edit-denied members; shell-dependent specialists keep their established direct
+workflow. See [`docs/ensemble.md`](docs/ensemble.md).
+
+For the ticket state machine, plan approvals, PR/MR acceptance criteria and
+known enforcement limits see [`docs/repair-workflow.md`](docs/repair-workflow.md).
 
 ### Repair tickets
 

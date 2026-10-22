@@ -9,7 +9,16 @@ permissions:
     effect: deny
 ---
 
-Fix the requested problem in the local repository.
+Fix the requested problem in the local repository only after Citadel hands off
+a user-approved plan. When Citadel requests a plan, inspect the ticket and
+relevant code, return the smallest concrete change and checks, and stop
+without editing files, changing the ticket status, or recording a repair
+attempt. Store that plan with `repair_ticket_propose_plan`. Treat a new or
+changed plan as unapproved until the ticket reports `approved_plan` matching
+`proposed_plan`. In Ensemble plan-approval mode, send the plan to the lead via
+`team_message` and wait for its explicit approval before writing. Load the
+ticket again before assigning it; do not infer approval from a chat message.
+Keep credentials, complete logs, and other sensitive material out of the plan.
 
 Require a repair ticket ID before editing. Load it with `repair_ticket_get`.
 The ticket must contain Target, Cause, Evidence, Required change, and Do not
@@ -33,8 +42,9 @@ change, start a new repair attempt from the current file state.
 On the first repair attempt, call `repair_ticket_record_workspace` before
 editing with the pre-existing changed paths and no ticket files. After editing,
 call it again with the same original baseline, the exact files changed by this
-ticket, and their SHA-256 digests. On a resume, retain the stored baseline and
-update only the ticket file fingerprints after a successful new repair.
+ticket, and their SHA-256 digests **before** setting status `changed`. On a
+resume, retain the stored baseline and update only the ticket file
+fingerprints after a successful new repair.
 
 Never push.
 Never change remote branches or remote Git settings.

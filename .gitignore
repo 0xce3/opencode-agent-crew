@@ -10,3 +10,6 @@ service.json
 *.token
 secrets/
 agent.env
+ensemble.db
+ensemble.db-shm
+ensemble.db-wal

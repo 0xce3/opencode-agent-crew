@@ -1,19 +1,5 @@
 import { Plugin } from "@opencode/plugin"
-
-type TicketStatus =
-  | "open"
-  | "assigned"
-  | "changed"
-  | "scope_match"
-  | "testing"
-  | "test_pass"
-  | "test_failed"
-  | "approval_required"
-  | "verified"
-  | "partial"
-  | "mismatch"
-  | "unverified"
-  | "blocked"
+import { assertTransition, statusTransitions, type TicketStatus } from "../lib/repair-ticket-policy"
 
 type TicketEvent = {
   at: string
@@ -45,22 +31,9 @@ type Ticket = {
   repairAttempts: number
   workspaceBaseline?: string[]
   ticketFiles?: TicketFile[]
-}
-
-const statusTransitions: Record<TicketStatus, readonly TicketStatus[]> = {
-  open: ["assigned", "blocked"],
-  assigned: ["changed", "blocked"],
-  changed: ["scope_match", "partial", "mismatch", "unverified", "blocked"],
-  scope_match: ["testing", "blocked"],
-  testing: ["test_pass", "test_failed", "approval_required", "blocked"],
-  test_pass: ["verified"],
-  test_failed: ["assigned", "blocked"],
-  approval_required: ["testing", "blocked"],
-  verified: [],
-  partial: ["assigned", "blocked"],
-  mismatch: ["assigned", "blocked"],
-  unverified: ["assigned", "blocked"],
-  blocked: ["assigned"],
+  proposedPlan?: string
+  approvedPlan?: string
+  scopeMatched?: boolean
 }
 
 const statuses = Object.keys(statusTransitions) as TicketStatus[]
@@ -129,6 +102,8 @@ function formatTicket(ticket: Ticket): string {
     `repair_attempts: ${ticket.repairAttempts ?? (ticket.events ?? []).filter((event) => event.status === "assigned").length}`,
     `workspace_baseline: ${(ticket.workspaceBaseline ?? []).join(" | ") || "none"}`,
     `ticket_files: ${(ticket.ticketFiles ?? []).map((file) => `${file.path}@${file.sha256}`).join(" | ") || "none"}`,
+    `proposed_plan: ${ticket.proposedPlan ?? "none"}`,
+    `approved_plan: ${ticket.approvedPlan ?? "none"}`,
     `expires_at: ${ticket.expiresAt ?? "none"}`,
     `history: ${history || "none"}`,
   ].join("\n")
@@ -139,21 +114,30 @@ export default Plugin.define({
   async setup(ctx) {
     const pruneExpired = async (): Promise<number> => {
       const now = Date.now()
-      const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100 })
       let removed = 0
-      for (const entry of page.entries) {
-        const ticket = entry.value as Ticket
-        if (ticket.status === "verified" && ticket.expiresAt && Date.parse(ticket.expiresAt) <= now) {
-          await ctx.storage.remove(entry.key)
-          removed += 1
+      let after: string | undefined
+      do {
+        const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100, after })
+        for (const entry of page.entries) {
+          const ticket = entry.value as Ticket
+          if (ticket.status === "verified" && ticket.expiresAt && Date.parse(ticket.expiresAt) <= now) {
+            await ctx.storage.remove(entry.key)
+            removed += 1
+          }
         }
-      }
+        after = page.next
+      } while (after)
       return removed
     }
 
     const createTicketID = async (): Promise<string> => {
-      const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100 })
-      const existingIDs = new Set(page.entries.map((entry) => entry.key.slice("ticket/".length)))
+      const existingIDs = new Set<string>()
+      let after: string | undefined
+      do {
+        const page = await ctx.storage.scan({ prefix: "ticket/", limit: 100, after })
+        for (const entry of page.entries) existingIDs.add(entry.key.slice("ticket/".length))
+        after = page.next
+      } while (after)
       for (let attempt = 0; attempt < 100; attempt += 1) {
         const adjective = adjectives[Math.floor(Math.random() * adjectives.length)]
         const animal = animals[Math.floor(Math.random() * animals.length)]
@@ -239,6 +223,73 @@ export default Plugin.define({
       })
 
       editor.add({
+        name: "propose_plan",
+        description: "Store a concrete repair plan without approving edits. A changed plan invalidates prior approval.",
+        input: {
+          type: "object",
+          properties: {
+            id: { type: "string", description: "Repair ticket ID" },
+            plan: { type: "string", description: "Exact local change, files, and bounded checks" },
+          },
+          required: ["id", "plan"],
+          additionalProperties: false,
+        },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (input, context) => {
+          if (context.agent !== "ripperdoc") throw new Error("only ripperdoc may propose repair plans")
+          const { id, plan } = input as { id: string; plan: string }
+          const ticket = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
+          if (!ticket) throw new Error(`repair ticket ${id} was not found`)
+          if (!["open", "partial", "mismatch", "unverified", "test_failed", "blocked"].includes(ticket.status)) {
+            throw new Error(`cannot propose a plan for ${ticket.status}`)
+          }
+          const next = limitText(plan, "plan", 1500)
+          if (next !== ticket.proposedPlan) ticket.approvedPlan = undefined
+          ticket.proposedPlan = next
+          ticket.updatedAt = new Date().toISOString()
+          await ctx.storage.set(ticketKey(id), ticket)
+          return { content: `id: ${id}\nplan: ${next}\napproved: ${ticket.approvedPlan === next}` }
+        },
+      })
+
+      editor.add({
+        name: "approve_plan",
+        description: "Ask the user to approve the exact proposed repair plan before assignment.",
+        input: {
+          type: "object",
+          properties: { id: { type: "string", description: "Repair ticket ID" } },
+          required: ["id"],
+          additionalProperties: false,
+        },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (input, context) => {
+          if (context.agent !== "citadel") throw new Error("only citadel may request repair approval")
+          const { id } = input as { id: string }
+          const ticket = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
+          if (!ticket?.proposedPlan) throw new Error("a concrete repair plan is required")
+          if (!["open", "partial", "mismatch", "unverified", "test_failed", "blocked"].includes(ticket.status)) {
+            throw new Error(`cannot approve a plan for ${ticket.status}`)
+          }
+          const plan = ticket.proposedPlan
+          await ctx.permission.assert({
+            sessionID: context.sessionID,
+            agent: context.agent,
+            source: { type: "tool", messageID: context.messageID, id: context.id },
+            action: "repair_ticket_approve_plan",
+            resources: [`${id}: ${plan}`],
+            save: [],
+            metadata: { plan, ticket: id },
+          })
+          const current = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
+          if (!current || current.proposedPlan !== plan) throw new Error("repair plan changed during approval")
+          current.approvedPlan = plan
+          current.updatedAt = new Date().toISOString()
+          await ctx.storage.set(ticketKey(id), current)
+          return { content: `id: ${id}\nplan_approved: yes` }
+        },
+      })
+
+      editor.add({
         name: "set_status",
         description: "Change a repair ticket status and append a short history event.",
         input: {
@@ -253,24 +304,29 @@ export default Plugin.define({
           additionalProperties: false,
         },
         options: { namespace: "repair_ticket", codemode: true },
-        execute: async (input) => {
+        execute: async (input, context) => {
           await pruneExpired()
           const { id, actor, status, note } = input as { id: string; actor: string; status: string; note: string }
           if (!isTicketStatus(status)) throw new Error(`invalid ticket status ${status}`)
+          if (context.agent !== actor) throw new Error("actor must match the calling agent")
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
           if (ticket.status === status) {
             return { content: `id: ${ticket.id}\nstatus: ${ticket.status}\nresult: unchanged` }
           }
-          if (!statusTransitions[ticket.status].includes(status)) {
-            throw new Error(`cannot change ticket from ${ticket.status} to ${status}`)
-          }
+          ticket.repairAttempts ??= (ticket.events ?? []).filter((event) => event.status === "assigned").length
+          assertTransition(ticket, status, actor)
           const now = new Date().toISOString()
           ticket.status = status
+          if (status === "assigned") {
+            ticket.approvedPlan = undefined
+            ticket.scopeMatched = false
+            ticket.ticketFiles = undefined
+          }
+          if (status === "scope_match") ticket.scopeMatched = true
           ticket.statusNote = limitText(note, "note", 500)
           ticket.updatedAt = now
-          ticket.repairAttempts ??= (ticket.events ?? []).filter((event) => event.status === "assigned").length
           if (status === "assigned") ticket.repairAttempts += 1
           ticket.events = [...(ticket.events ?? []), {
             at: now,
@@ -313,7 +369,7 @@ export default Plugin.define({
           additionalProperties: false,
         },
         options: { namespace: "repair_ticket", codemode: true },
-        execute: async (input) => {
+        execute: async (input, context) => {
           await pruneExpired()
           const { id, actor, pre_existing_paths, ticket_files } = input as {
             id: string
@@ -324,6 +380,9 @@ export default Plugin.define({
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
+          if (context.agent !== "ripperdoc" || actor !== "ripperdoc" || ticket.status !== "assigned") {
+            throw new Error("only an assigned ripperdoc may record repair provenance")
+          }
           const baseline = limitList(pre_existing_paths, "pre_existing_paths", 100, 300).map(validatePath)
           if (ticket.workspaceBaseline && ticket.workspaceBaseline.join("\n") !== baseline.join("\n")) {
             throw new Error("workspace baseline differs from the ticket baseline")
