@@ -1,5 +1,8 @@
 import { Plugin } from "@opencode/plugin"
-import { assertTransition, statusTransitions, type TicketStatus } from "../lib/repair-ticket-policy"
+import { createHash } from "node:crypto"
+import { lstat, readFile } from "node:fs/promises"
+import { join } from "node:path"
+import { assertTransition, canEditRepairFile, createRepairPermissionGuard, statusTransitions, type TicketStatus } from "../lib/repair-ticket-policy"
 
 type TicketEvent = {
   at: string
@@ -34,6 +37,8 @@ type Ticket = {
   proposedPlan?: string
   approvedPlan?: string
   scopeMatched?: boolean
+  plannedPaths?: string[]
+  assignedSessionID?: string
 }
 
 const statuses = Object.keys(statusTransitions) as TicketStatus[]
@@ -73,7 +78,9 @@ function limitList(value: readonly string[], field: string, maximumItems: number
 
 function validatePath(value: string): string {
   const path = limitText(value, "path", 300)
-  if (path.startsWith("/") || path.split("/").includes("..")) throw new Error("path must be workspace-relative")
+  if (path.startsWith("/") || path.includes("\\") || path.split("/").some((part) => !part || part === "." || part === ".." || part === ".git")) {
+    throw new Error("path must be a normalized workspace-relative file path")
+  }
   return path
 }
 
@@ -104,6 +111,7 @@ function formatTicket(ticket: Ticket): string {
     `ticket_files: ${(ticket.ticketFiles ?? []).map((file) => `${file.path}@${file.sha256}`).join(" | ") || "none"}`,
     `proposed_plan: ${ticket.proposedPlan ?? "none"}`,
     `approved_plan: ${ticket.approvedPlan ?? "none"}`,
+    `planned_paths: ${(ticket.plannedPaths ?? []).join(" | ") || "none"}`,
     `expires_at: ${ticket.expiresAt ?? "none"}`,
     `history: ${history || "none"}`,
   ].join("\n")
@@ -112,6 +120,30 @@ function formatTicket(ticket: Ticket): string {
 export default Plugin.define({
   id: "repair-ticket-store",
   async setup(ctx) {
+    const safeWorkspacePath = async (value: string): Promise<string> => {
+      const path = validatePath(value)
+      let current = ctx.location.directory
+      for (const part of path.split("/")) {
+        current = join(current, part)
+        try {
+          if ((await lstat(current)).isSymbolicLink()) throw new Error(`symlink in scoped path: ${path}`)
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === "ENOENT") break
+          throw error
+        }
+      }
+      return path
+    }
+
+    await ctx.permission.hook("evaluate", createRepairPermissionGuard({
+      sessionAgent: async (sessionID) => (await ctx.session.get({ sessionID })).agent,
+      ticketForSession: async (sessionID) => {
+        const id = await ctx.storage.get(`repair-session/${sessionID}`) as string | undefined
+        return id ? await ctx.storage.get(ticketKey(id)) as Ticket | undefined : undefined
+      },
+      safePath: async (path) => { await safeWorkspacePath(path) },
+    }))
+
     const pruneExpired = async (): Promise<number> => {
       const now = Date.now()
       let removed = 0
@@ -223,6 +255,51 @@ export default Plugin.define({
       })
 
       editor.add({
+        name: "workspace_status",
+        description: "Read the current workspace status without giving Citadel or Ripperdoc shell access.",
+        input: { type: "object", properties: {}, additionalProperties: false },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (_input, context) => {
+          if (context.agent !== "ripperdoc" && context.agent !== "citadel") throw new Error("only citadel or ripperdoc may request this workspace snapshot")
+          const status = await ctx.vcs.status()
+          return { content: JSON.stringify(status) }
+        },
+      })
+
+      editor.add({
+        name: "workspace_diff",
+        description: "Read a bounded working-tree diff without giving Citadel or Ripperdoc shell access.",
+        input: { type: "object", properties: {}, additionalProperties: false },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (_input, context) => {
+          if (context.agent !== "ripperdoc" && context.agent !== "citadel") throw new Error("only citadel or ripperdoc may request this workspace diff")
+          const diff = JSON.stringify(await ctx.vcs.diff({ mode: "working", context: 3 }))
+          return { content: diff.length > 24000 ? `${diff.slice(0, 24000)}\n[truncated; request narrower project evidence]` : diff }
+        },
+      })
+
+      editor.add({
+        name: "fingerprint",
+        description: "Read a workspace file's SHA-256 digest without shell access.",
+        input: {
+          type: "object",
+          properties: { path: { type: "string", description: "Workspace-relative file" } },
+          required: ["path"],
+          additionalProperties: false,
+        },
+        options: { namespace: "repair_ticket", codemode: true },
+        execute: async (input, context) => {
+          if (context.agent !== "ripperdoc") throw new Error("only ripperdoc may request ticket fingerprints")
+          const path = await safeWorkspacePath((input as { path: string }).path)
+          const ticketID = await ctx.storage.get(`repair-session/${context.sessionID}`) as string | undefined
+          const ticket = ticketID ? await ctx.storage.get(ticketKey(ticketID)) as Ticket | undefined : undefined
+          if (!canEditRepairFile(ticket, context.sessionID, [path])) throw new Error("file is not assigned to this repair session")
+          const sha256 = createHash("sha256").update(await readFile(join(ctx.location.directory, path))).digest("hex")
+          return { content: `path: ${path}\nsha256: ${sha256}` }
+        },
+      })
+
+      editor.add({
         name: "propose_plan",
         description: "Store a concrete repair plan without approving edits. A changed plan invalidates prior approval.",
         input: {
@@ -230,25 +307,31 @@ export default Plugin.define({
           properties: {
             id: { type: "string", description: "Repair ticket ID" },
             plan: { type: "string", description: "Exact local change, files, and bounded checks" },
+            paths: { type: "array", items: { type: "string" }, description: "Exact workspace-relative files allowed for this plan" },
           },
-          required: ["id", "plan"],
+          required: ["id", "plan", "paths"],
           additionalProperties: false,
         },
         options: { namespace: "repair_ticket", codemode: true },
         execute: async (input, context) => {
           if (context.agent !== "ripperdoc") throw new Error("only ripperdoc may propose repair plans")
-          const { id, plan } = input as { id: string; plan: string }
+          const { id, plan, paths } = input as { id: string; plan: string; paths: string[] }
           const ticket = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
           if (!["open", "partial", "mismatch", "unverified", "test_failed", "blocked"].includes(ticket.status)) {
             throw new Error(`cannot propose a plan for ${ticket.status}`)
           }
           const next = limitText(plan, "plan", 1500)
-          if (next !== ticket.proposedPlan) ticket.approvedPlan = undefined
+          const scoped = limitList(paths, "paths", 30, 300)
+          if (scoped.length === 0) throw new Error("plan requires at least one file path")
+          const plannedPaths = await Promise.all(scoped.map(safeWorkspacePath))
+          if (new Set(plannedPaths).size !== plannedPaths.length) throw new Error("plan paths must be unique")
+          if (next !== ticket.proposedPlan || plannedPaths.join("\n") !== ticket.plannedPaths?.join("\n")) ticket.approvedPlan = undefined
           ticket.proposedPlan = next
+          ticket.plannedPaths = plannedPaths
           ticket.updatedAt = new Date().toISOString()
           await ctx.storage.set(ticketKey(id), ticket)
-          return { content: `id: ${id}\nplan: ${next}\napproved: ${ticket.approvedPlan === next}` }
+          return { content: `id: ${id}\nplan: ${next}\npaths: ${plannedPaths.join(" | ")}\napproved: ${ticket.approvedPlan === next}` }
         },
       })
 
@@ -266,22 +349,23 @@ export default Plugin.define({
           if (context.agent !== "citadel") throw new Error("only citadel may request repair approval")
           const { id } = input as { id: string }
           const ticket = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
-          if (!ticket?.proposedPlan) throw new Error("a concrete repair plan is required")
+          if (!ticket?.proposedPlan || !ticket.plannedPaths?.length) throw new Error("a concrete repair plan with file scope is required")
           if (!["open", "partial", "mismatch", "unverified", "test_failed", "blocked"].includes(ticket.status)) {
             throw new Error(`cannot approve a plan for ${ticket.status}`)
           }
           const plan = ticket.proposedPlan
+          const paths = ticket.plannedPaths.join(" | ")
           await ctx.permission.assert({
             sessionID: context.sessionID,
             agent: context.agent,
             source: { type: "tool", messageID: context.messageID, id: context.id },
             action: "repair_ticket_approve_plan",
-            resources: [`${id}: ${plan}`],
+            resources: [`${id}: ${plan}; files: ${paths}`],
             save: [],
-            metadata: { plan, ticket: id },
+            metadata: { plan, paths: ticket.plannedPaths, ticket: id },
           })
           const current = (await ctx.storage.get(ticketKey(id))) as Ticket | undefined
-          if (!current || current.proposedPlan !== plan) throw new Error("repair plan changed during approval")
+          if (!current || current.proposedPlan !== plan || current.plannedPaths?.join(" | ") !== paths) throw new Error("repair plan changed during approval")
           current.approvedPlan = plan
           current.updatedAt = new Date().toISOString()
           await ctx.storage.set(ticketKey(id), current)
@@ -312,6 +396,9 @@ export default Plugin.define({
           const key = ticketKey(id)
           const ticket = (await ctx.storage.get(key)) as Ticket | undefined
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
+          if (ticket.status === "assigned" && ticket.assignedSessionID !== context.sessionID && status === "changed") {
+            throw new Error("ticket belongs to a different repair session")
+          }
           if (ticket.status === status) {
             return { content: `id: ${ticket.id}\nstatus: ${ticket.status}\nresult: unchanged` }
           }
@@ -323,6 +410,7 @@ export default Plugin.define({
             ticket.approvedPlan = undefined
             ticket.scopeMatched = false
             ticket.ticketFiles = undefined
+            ticket.assignedSessionID = context.sessionID
           }
           if (status === "scope_match") ticket.scopeMatched = true
           ticket.statusNote = limitText(note, "note", 500)
@@ -338,6 +426,7 @@ export default Plugin.define({
             ticket.expiresAt = new Date(Date.now() + archiveDurationMilliseconds).toISOString()
           }
           await ctx.storage.set(key, ticket)
+          if (status === "assigned") await ctx.storage.set(`repair-session/${context.sessionID}`, ticket.id)
           return { content: `id: ${ticket.id}\nstatus: ${ticket.status}` }
         },
       })
@@ -382,6 +471,13 @@ export default Plugin.define({
           if (!ticket) throw new Error(`repair ticket ${id} was not found`)
           if (context.agent !== "ripperdoc" || actor !== "ripperdoc" || ticket.status !== "assigned") {
             throw new Error("only an assigned ripperdoc may record repair provenance")
+          }
+          if (ticket.assignedSessionID !== context.sessionID) throw new Error("ticket belongs to a different repair session")
+          for (const file of ticket_files) {
+            const path = await safeWorkspacePath(file.path)
+            if (!ticket.plannedPaths?.includes(path)) throw new Error(`file outside approved plan: ${path}`)
+            const actual = createHash("sha256").update(await readFile(join(ctx.location.directory, path))).digest("hex")
+            if (file.sha256.toLowerCase() !== actual) throw new Error(`file fingerprint differs from disk: ${path}`)
           }
           const baseline = limitList(pre_existing_paths, "pre_existing_paths", 100, 300).map(validatePath)
           if (ticket.workspaceBaseline && ticket.workspaceBaseline.join("\n") !== baseline.join("\n")) {

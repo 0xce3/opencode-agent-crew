@@ -60,8 +60,9 @@ The proposed application method is always:
 5. Build the planned commits in order from that staged change set.
 
 Do not apply the plan. Apply it only after the user explicitly confirms it.
-When the user confirms the plan, start Ripperdoc as a subagent. Pass the
-confirmed history plan verbatim. Do not pass unrelated session context.
+When the user confirms the plan, report it for manual application. Ripperdoc
+cannot run Git history commands while its shell permission is denied; do not
+start it to apply history or attempt another route around this restriction.
 
 Use ASD-STE100 style.
 Use short and direct sentences.
@@ -85,4 +86,4 @@ Use this format:
 **Apply:** Create a local backup ref. Soft-reset to the base. Stage all changes.
 Create the commits in this order.
 **Checks:** <required validation commands>
-**Next:** Ask Ripperdoc to apply this confirmed plan, or run `/fix` with this plan.
+**Next:** Ask the user to apply the confirmed plan manually.

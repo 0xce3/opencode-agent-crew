@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+before="$(git status --porcelain)"
+
+bun="${BUN:-$HOME/.bun/bin/bun}"
+if [[ ! -x "$bun" ]]; then bun="$(command -v bun)"; fi
+"$bun" test tests/repair-ticket-policy.test.ts tests/repair-ticket-store.test.ts
+git diff --check
+
+opencode plugin list | grep -F 'repair-ticket-store'
+opencode debug agents | jq -e '[.[] | select(.id == "ripperdoc") | .permissions[] | select(.action == "shell" and .resource == "*" and .effect == "deny")] | length == 1' >/dev/null
+opencode debug agents | jq -e '[.[] | select(.id == "citadel") | .permissions[] | select(.action == "edit" and .resource == "*" and .effect == "ask")] | length == 1' >/dev/null
+opencode debug agents | jq -e '[.[] | select(.id == "citadel") | .permissions[] | select(.action == "shell" and .resource == "*" and .effect == "deny")] | length == 1' >/dev/null
+
+if [[ "$before" != "$(git status --porcelain)" ]]; then
+  echo "Workspace status changed during validation" >&2
+  exit 1
+fi
+echo "Repair policy and host registration checks passed; live user approval and edits were not exercised."

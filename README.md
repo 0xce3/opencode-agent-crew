@@ -81,8 +81,8 @@ rules, and changes only what the diagnosis requires.
 Rook follows the project's style and uses its own formatters and compliance
 checks when they are quick and targeted. He recommends tests instead of running
 long jobs. He does not add comments just to narrate obvious code. He never
-pushes or discards your work. He creates local commits only for a confirmed
-Patchrunner history plan. The final call stays with you.
+pushes, commits, or discards your work. Patchrunner history plans are reported
+for manual application; the final call stays with you.
 
 > **ON SHIFT**  Local fixes · Short checks · No pushes
 
@@ -154,9 +154,9 @@ unrelated jobs in one drop. Before a delivery, she checks the branch, the rules,
 and the existing trail. Then she lays out a sequence that another operator can
 read without asking what happened.
 
-Mara only plans. If the operator approves, Rook rebuilds the local branch from
-the selected main base and creates the agreed commits. Nothing goes to a remote
-without the operator.
+Mara only plans. If the operator approves, they apply the local history plan
+manually; Rook has no shell access. Nothing goes to a remote without the
+operator.
 
 > **ON SHIFT**  Commit plans · Local history · No merges or remote changes
 
@@ -180,6 +180,10 @@ Use `/explain <topic>` to start a focused explanation session. Use
 `/fix <ticket-id>` or `/resume <ticket-id>` to enter an existing repair ticket.
 For a new problem, describe the complete goal to Citadel; it delegates the
 investigation and continues the requested repair without another command.
+For a failed CI pipeline, start a new OpenCode session and enter `/pipecheck`:
+it selects Citadel in that same chat and dispatches Netrunner for a read-only
+diagnosis of the current branch. `/pipecheck <branch-or-PR/MR-URL>` selects a
+different target. This command does not start a repair or modify remote CI.
 
 ## Citadel and Ensemble teams
 
@@ -187,7 +191,12 @@ investigation and continues the requested repair without another command.
 complex work that benefits from independent, parallel Night Shift sessions.
 Citadel remains the single master chat and coordinates shared tasks,
 dependencies, direct member messages, status, controlled shutdown, and session
-navigation. Small requests stay in the master chat.
+navigation. A clear, low-risk, one-file Kleinfix stays in the master chat:
+Citadel reads the file and workspace status, edits it directly only after
+OpenCode asks for a one-time edit permission, and checks the diff. It creates
+no ticket or team and does not claim independent verification. Failed CI,
+uncertain causes, credential/security paths, overlapping local changes, or
+changes requiring tests use the full ticket workflow instead. For those cases,
 Citadel asks once for explicit approval of Ripperdoc's concrete plan before
 edits, then continues all permitted verification stages automatically.
 
@@ -201,6 +210,9 @@ workflow. See [`docs/ensemble.md`](docs/ensemble.md).
 
 For the ticket state machine, plan approvals, PR/MR acceptance criteria and
 known enforcement limits see [`docs/repair-workflow.md`](docs/repair-workflow.md).
+Run `scripts/check-repair-workflow` for repeatable permission/transition tests
+without editing project files; the interactive approval and complete CI-to-fix
+run still require a separate supervised acceptance test.
 
 ### Repair tickets
 
@@ -231,8 +243,8 @@ Tickets that do not match stay available for follow-up.
 
 - No agent commits or pushes changes.
 - Read-only agents do not edit files or change remote systems.
-- Ripperdoc does not discard user changes. It changes local Git history only for
-  a confirmed Patchrunner plan.
+- Ripperdoc does not discard user changes or change local Git history. Its
+  shell is denied, including after a repair-plan approval.
 - Project instructions and existing code style guide the work.
 - Logs and tool output are narrowed to the evidence needed.
 

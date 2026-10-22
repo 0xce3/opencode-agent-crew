@@ -11,6 +11,11 @@ the team independent OpenCode sessions, direct member messages, a shared task
 board with dependencies, durable team state, recovery, controlled shutdown,
 and explicit session navigation.
 
+For a CI diagnosis, start a new session and type `/pipecheck` (or
+`/pipecheck <branch-or-PR/MR-URL>`). The command keeps the current chat,
+selects Citadel, and asks it to dispatch Netrunner directly. It does not
+create an Ensemble team for this single investigator or authorize any fix.
+
 Existing specialist prompts remain authoritative. Netrunner, Braindance, and
 Gonk Check are read-only investigators. Citadel delegates shell-dependent
 investigations directly and continues a requested repair from the returned
@@ -45,6 +50,11 @@ branch merging. Citadel spawns every Night Shift member with `worktree: false`.
 This preserves the existing single working-tree repair rules and prevents an
 Ensemble branch from bypassing Ripperdoc's no-merge, no-push, and
 user-approval requirements.
+
+Ripperdoc's shell is denied even after approval. The repair-ticket plugin
+checks built-in edit permissions against the approved ticket's exact file list
+and the assigned session ID; a separate Test Pilot runs bounded tests. Git
+history plans are manual while Ripperdoc cannot run shell commands.
 
 The local `repair-ticket-store` is retained because Ensemble tasks do not
 replace repair diagnosis, constrained status transitions, retry limits,

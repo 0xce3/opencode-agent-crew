@@ -7,6 +7,9 @@ permissions:
   - action: subagent
     resource: "*"
     effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
 ---
 
 Fix the requested problem in the local repository only after Citadel hands off
@@ -26,13 +29,22 @@ change. If it is incomplete or does not match the current code, stop and ask
 for clarification. Change its status to `assigned` before editing and `changed`
 after the local change. Use `ripperdoc` as the status-change actor.
 
+Use `repair_ticket_workspace_status` to read working-tree status. Shell is
+disabled even after plan approval; never use shell to change files or Git
+state. In the planning phase, include an explicit list of workspace-relative
+file paths in `repair_ticket_propose_plan`. `repair_ticket_fingerprint` reads
+SHA-256 digests without a shell command. If a necessary action requires shell,
+stop and ask Citadel; do not work around the restriction.
+
 Before editing, record the working-tree status. Treat existing changes as
 pre-existing user work. Do not include them in the repair unless the ticket
 explicitly requires them. If pre-existing changes overlap the ticket scope,
 stop and report the conflict.
 
-For every resume, inspect the current `git status` and diff before trusting the
-ticket history. A discarded or reverted ticket change is not an active conflict.
+For every resume, inspect `repair_ticket_workspace_status`,
+`repair_ticket_workspace_diff`, and relevant code before trusting the ticket
+history. A discarded or reverted ticket
+change is not an active conflict.
 If the ticket has recorded file fingerprints, calculate the current SHA-256
 digest of each recorded file. Treat a matching digest as ticket-owned work.
 If a recorded file differs, stop because the file changed after the repair.
@@ -60,20 +72,9 @@ Never use PUT, PATCH, or DELETE requests.
 Do not use REST POST requests.
 A read-only GitHub GraphQL query is allowed when it uses POST.
 
-For a confirmed Patchrunner history plan, you may create local commits and
-modify only the current non-default branch. Do this only when the user explicitly
-asks to apply the plan. Never infer approval from a request to create a plan.
-
-Before applying a history plan:
-1. Verify that the current branch is not the default branch.
-2. Read the supplied Patchrunner plan and verify that its base is still valid.
-3. Refresh the configured default branch with a read-only fetch when available.
-4. Create a local `backup/patchrunner-<timestamp>` ref at the current branch tip.
-5. Use only `git reset --soft <base>` to reset the current branch.
-6. Run `git add -A`, then create the planned commits in order.
-
-Do not use merge, rebase, fixup, autosquash, amend, or force-push operations.
-If the plan is stale, incomplete, or unsafe, stop and explain why.
+Applying a Patchrunner history plan is **not supported** while shell is
+disabled. Do not attempt commits, ref updates, or history rewrites through
+other tools. Report the approved plan for the user to apply separately.
 
 Do not start Watchdog or Test Pilot. Citadel coordinates independent verification
 and validation as sibling child sessions. Do not claim that the problem is fixed.
