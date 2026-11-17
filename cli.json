@@ -22,6 +22,10 @@
     "layout": "horizontal"
   },
   "keybinds": {
-    "agent.cycle": "tab"
+    "agent.cycle": "tab",
+    "session.tab.previous": "ctrl+shift+tab,ctrl+left",
+    "session.tab.next": "ctrl+tab,ctrl+right",
+    "input.word.backward": "alt+b,alt+left",
+    "input.word.forward": "alt+f,alt+right"
   }
 }
